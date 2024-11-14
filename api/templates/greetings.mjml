@@ -1,0 +1,36 @@
+{% load mjml %}
+{% mjml %}
+<mjml>
+  <mj-body>
+    <mj-section background-color="#f4f4f4" padding="20px">
+      <mj-column>
+        <!-- Centered Box -->
+        <mj-table align="center" width="600px" background-color="#ffffff" border="1px solid #e0e0e0" border-radius="10px" padding="30px">
+          <!-- Greeting Image -->
+          <mj-tr>
+            <mj-td align="center">
+              <mj-image src="https://via.placeholder.com/150" alt="Greeting Image" width="150px" />
+            </mj-td>
+          </mj-tr>
+          <!-- Greeting Text -->
+          <mj-tr>
+            <mj-td>
+              <mj-text align="center" font-size="24px" font-family="Helvetica, Arial, sans-serif" color="#333333">
+                Hello, {{ user_email }}!
+              </mj-text>
+            </mj-td>
+          </mj-tr>
+          <!-- Thank You Text -->
+          <mj-tr>
+            <mj-td>
+              <mj-text align="center" font-size="18px" font-family="Helvetica, Arial, sans-serif" color="#333333">
+                Thank you for joining our service. We're thrilled to have you with us!
+              </mj-text>
+            </mj-td>
+          </mj-tr>
+        </mj-table>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
+{% endmjml %}
