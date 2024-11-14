@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome Email</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background-color: #f4f4f4;
+      }
+
+      .email-container {
+        width: 100%;
+        padding: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #f4f4f4;
+      }
+
+      .email-content {
+        width: 600px;
+        background-color: #ffffff;
+        border-radius: 10px;
+        border: 1px solid #e0e0e0;
+        text-align: center;
+        padding: 40px;
+      }
+
+      .email-content img {
+        width: 500px;
+        border-radius: 10px;
+        align-items: center;
+      }
+
+      .email-content h1 {
+        font-size: 24px;
+        color: #333333;
+        margin-bottom: 20px;
+      }
+
+      .email-content p {
+        font-size: 18px;
+        color: #333333;
+      }
+
+      .footer {
+        font-size: 12px;
+        color: #aaaaaa;
+        margin-top: 30px;
+      }
+      .separator {
+        border-top: 1px solid #7c7c7c;
+        margin: 20px 10px;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <div class="email-content">
+        <img
+          style="width: 150px"
+          src="https://th.bing.com/th/id/R.aa99f1592665d18355f29c5297ee5c15?rik=r9ee0UsfPSieqA&riu=http%3a%2f%2fhenriquezlara.com%2fblog%2fwp-content%2fuploads%2f2011%2f02%2fHL_Web_EzLife_Id_1.jpg&ehk=jkRcyZpzbySpL39B767NjaXwHb2qaKy53i%2f5a%2b7%2f17c%3d&risl=&pid=ImgRaw&r=0"
+          alt="logo"
+        />
+        <div class="separator"></div>
+        <img
+          src="https://images.pexels.com/photos/3826676/pexels-photo-3826676.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
+          alt="Greeting Image"
+        />
+        <h1>Hello, {{ user_email }}!</h1>
+        <p>
+          Thank you for subscribing to EZGroup!<br /><br />We are so excited to
+          have you in. <br /><br />As a Subscriber, you will receive
+          notifications from us about latest news and projects, events from us.
+        </p>
+        <p><br /><br />Sincerely,<br /><br />EZGroup Team</p>
+        <div class="separator"></div>
+        <div class="footer">
+          <p>
+            Copyright 2024 EZGroup<br />
+            Ho Chi Minh City, Vietnam | ezgroup.help@gmail.com<br />
+            For any inquiries, please contact us via this email.
+          </p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
