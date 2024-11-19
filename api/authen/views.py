@@ -1,9 +1,10 @@
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, AllowAny
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 from .models import User, OneTimePassword
 from rest_framework.views import APIView
-from .serializers import UserRegisterSerializer, UserUpdateSerializer, PasswordVerificationSerializer, EmailVerificationSerializer
+from .serializers import UserRegisterSerializer, UserUpdateSerializer, PasswordVerificationSerializer, EmailVerificationSerializer, LoginSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.core.mail import send_mail
 from django.utils.crypto import get_random_string
@@ -39,6 +40,7 @@ class UserRegisterView(generics.CreateAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class VerifyOTPView(APIView):
+    permission_classes=[AllowAny]
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         otp_code = request.data.get('otp')
@@ -130,20 +132,19 @@ class UserUpdateView(generics.RetrieveUpdateAPIView):
 
 
 class UserLoginView(APIView):
-    permission_classes = (AllowAny)
+    permission_classes = [AllowAny]
+    serializer_class = LoginSerializer
 
+    @swagger_auto_schema(request_body=LoginSerializer)
     def post(self, request):
-        email = request.data.get('email')
-        password = request.data.get('password')
-        user = User.objects.filter(email=email).first()
-        if user and user.check_password(password):
-            tokens = user.tokens()
-            return Response({"access":tokens['access'], "refresh":tokens['refresh']})
-        else:
-            return Response({"detail":"Invalid User"}, status=401)
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            tokens = serializer.validated_data
+            return Response(tokens, status=status.HTTP_200_OK)
 
 class LogoutView(APIView):
     permission_classes=[IsAuthenticated]
+    
     def post(self, request):
         refresh_token = request.data.get('refresh')
         if refresh_token:

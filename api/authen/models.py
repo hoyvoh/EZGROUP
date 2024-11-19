@@ -69,6 +69,14 @@ class User(AbstractBaseUser, PermissionsMixin):
             'refresh': str(refresh),
             'access': str(refresh.access_token),
         }
+    def get_dummy_user(self):
+        if not self.objects.filter(username='anonymous').exists():
+            self.objects.create_user(
+                username='anonymous',
+                email='anonymous@example.com',
+                password='dummy_password'
+            )
+        return self.objects.filter(username='anonymous')
 
 
 class OneTimePassword(models.Model):

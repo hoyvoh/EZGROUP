@@ -2,6 +2,8 @@ from rest_framework import serializers
 from .models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.exceptions import AuthenticationFailed
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(max_length=68, min_length=6, write_only=True)
@@ -30,6 +32,35 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['email', 'first_name', 'last_name', 'date_of_birth', 'resident_id', 'staff_id', 'role']
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(write_only=True, required=True)
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        password = attrs.get('password')
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise AuthenticationFailed('Invalid credentials')
+
+        if not user.check_password(password):
+            raise AuthenticationFailed('Invalid credentials')
+
+        if not user.is_active:
+            raise AuthenticationFailed('User is inactive')
+
+        # Generate JWT tokens for the user
+        refresh = RefreshToken.for_user(user)
+        access_token = refresh.access_token
+
+        # Return the tokens as a dictionary
+        return {
+            'access': str(access_token),
+            'refresh': str(refresh),
+        }
 
 class PasswordVerificationSerializer(serializers.Serializer):
     current_password = serializers.CharField(write_only=True)
