@@ -1,4 +1,4 @@
-from rest_framework import status
+from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
@@ -10,17 +10,12 @@ from django.template.loader import render_to_string
 from drf_yasg.utils import swagger_auto_schema
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from django.http import HttpResponse
 import os
 
 
 def send_welcome_email(user_email):
     subject = "Welcome to Our Service"
-    
-    # Render the HTML content of the email
     message = render_to_string("greetings.html", {"user_email": user_email})
-    
-    # Prepare email
     email = MIMEMultipart()
     email['Subject'] = subject
     email['From'] = settings.DEFAULT_FROM_EMAIL

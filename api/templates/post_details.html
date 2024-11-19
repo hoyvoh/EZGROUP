@@ -1,0 +1,12 @@
+{% extends "base.html" %} {% block title %}{{ post.title }} by
+{{post.author_email}}{% endblock %} {% block content %}
+<h1>{{ post.title }}</h1>
+<h3>Author: {{ post.author }}</h3>
+<hr />
+<p>{{ post.content }}</p>
+<br />
+<hr />
+
+<a href="{% url 'home' %}">Back</a>
+
+{% endblock %}

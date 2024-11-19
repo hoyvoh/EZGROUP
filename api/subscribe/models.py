@@ -7,4 +7,3 @@ class Subscription(models.Model):
     def __str__(self):
         return self.sub_email
 
-

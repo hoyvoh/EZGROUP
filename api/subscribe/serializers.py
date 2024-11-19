@@ -18,3 +18,4 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         if created:
             return subscription
         return None 
+    

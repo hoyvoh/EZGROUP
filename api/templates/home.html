@@ -1,0 +1,48 @@
+{% extends "base.html" %} {% block content %}
+<h1>List of Existing blogs</h1>
+
+<ul id="post-list">
+  {% for post in object_list %}
+  <li id="post-{{ post.id }}">
+    <a href="{% url 'post-details' post.pk %}">{{ post.title }}</a> | {{
+    post.author_email }}<br />
+    {{ post.content }}
+  </li>
+  {% endfor %}
+</ul>
+
+{% endblock %} {% block extra_js %}
+<script>
+  const socket = new WebSocket("ws://localhost:8000/ws/post/");
+
+  socket.onmessage = function (event) {
+    const data = JSON.parse(event.data);
+
+    if (data.type === "post") {
+      const post = data.post;
+
+      const newPostElement = document.createElement("li");
+      newPostElement.id = `post-${post.id}`;
+      newPostElement.innerHTML = `
+            <a href="/api/v1/blog/posts/${post.id}/">${post.title}</a> | ${post.author_email}<br />
+            ${post.content}
+        `;
+
+      const postList = document.getElementById("post-list");
+      postList.prepend(newPostElement);
+    }
+  };
+
+  socket.onopen = function () {
+    console.log("WebSocket connection established.");
+  };
+
+  socket.onerror = function (error) {
+    console.error("WebSocket error:", error);
+  };
+
+  socket.onclose = function () {
+    console.log("WebSocket connection closed.");
+  };
+</script>
+{% endblock %}
