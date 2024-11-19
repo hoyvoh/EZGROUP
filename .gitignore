@@ -5,3 +5,6 @@
 **/package-lock.json
 **/package.json
 **/.ipynb_checkpoints
+**/templates
+**/data_collection
+**/migrations

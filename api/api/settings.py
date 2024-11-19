@@ -51,6 +51,7 @@ SIMPLE_JWT = {
 # Application definition
 
 INSTALLED_APPS = [
+    "channels",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -62,8 +63,8 @@ INSTALLED_APPS = [
     'blog',
     'subscribe',
     "rest_framework",
+    'drf_yasg',
     "corsheaders",
-    # "mjml",
 ]
 
 MIDDLEWARE = [
@@ -96,6 +97,16 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'api.wsgi.application'
+ASGI_APPLICATION = 'api.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG':{
+            "hosts": [('127.0.0.1', 6379), ('0.0.0.0', 6379)],
+        }
+    },
+}
 
 
 # Database
@@ -162,7 +173,9 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER') 
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_APP_PASSWORD')  
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
-# MJML_BACKEND_MODE = "cmd"
-# MJML_EXEC_CMD = "node_modules/.bin/mjml"
+
+CELERY_TIMEZONE="Vietnam"
+CELERY_TASK_TRACK_STARTED = True 
+CELERY_TASK_TIME_LIMIT = 30*60
 
 

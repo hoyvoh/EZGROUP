@@ -7,9 +7,10 @@ from django.conf import settings
 from .models import Subscription
 from .serializers import SubscriptionSerializer
 from django.template.loader import render_to_string
-from email.mime.image import MIMEImage
+from drf_yasg.utils import swagger_auto_schema
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from django.http import HttpResponse
 import os
 
 
@@ -35,13 +36,14 @@ def send_welcome_email(user_email):
         fail_silently=False,
     )
 
-def get_newsletter_rendered(email):
-    pass
-
 class SubscribeView(APIView):
     permission_classes = [AllowAny]
     serializer_class = SubscriptionSerializer
 
+    @swagger_auto_schema(
+        request_body=SubscriptionSerializer, 
+        responses={200: SubscriptionSerializer, 400: 'Bad Request'}
+    )
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         
@@ -61,3 +63,5 @@ class SubscribeView(APIView):
             )
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+

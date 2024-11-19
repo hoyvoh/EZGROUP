@@ -6,3 +6,5 @@ class Subscription(models.Model):
     sub_email = models.EmailField(unique=True)
     def __str__(self):
         return self.sub_email
+
+
