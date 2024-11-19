@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Welcome Email</title>
+    <title>{% block title %}Base Email{% endblock %}</title>
     <style>
       body {
         margin: 0;
@@ -58,7 +58,7 @@
         margin-bottom: 10px;
       }
       .show-more-btn {
-        background-color: #8076f4; /* Pinky Red */
+        background-color: #f8a1b2; /* Pinky Red */
         color: white;
         padding: 12px 20px;
         border-radius: 5px;
@@ -89,53 +89,16 @@
         margin: 20px 10px;
         width: 100%;
       }
-      .image-container {
-        width: 100%;
-        max-width: 500px;
-        padding: 10px;
-        box-sizing: border-box;
-        overflow: hidden;
-        margin: 0 auto;
-      }
-
-      .image-container img {
-        width: 100%;
-        height: auto;
-        display: block;
-        border-radius: 5px;
-      }
+    </style>
     </style>
   </head>
   <body>
     <div class="email-container">
       <div class="email-content">
-        <!-- Header Logo -->
-        <div class="header-logo">
-          <img
-            src="https://th.bing.com/th/id/R.aa99f1592665d18355f29c5297ee5c15?rik=r9ee0UsfPSieqA&riu=http%3a%2f%2fhenriquezlara.com%2fblog%2fwp-content%2fuploads%2f2011%2f02%2fHL_Web_EzLife_Id_1.jpg&ehk=jkRcyZpzbySpL39B767NjaXwHb2qaKy53i%2f5a%2b7%2f17c%3d&risl=&pid=ImgRaw&r=0"
-            alt="logo"
-            class="image-box"
-          />
-        </div>
-        <div class="separator"></div>
-        <div class="image-container">
-          <img
-            src="https://images.pexels.com/photos/3826676/pexels-photo-3826676.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
-            alt="Greeting Image"
-          />
-        </div>
-        <div class="separator"></div>
-        <h1>Hello, {{ user_email }}!</h1>
-        <p>
-          Thank you for subscribing to EZGroup!<br /><br />
-          We are so excited to have you in.<br /><br />
-          As a Subscriber, you will receive notifications about the latest news,
-          projects, and events from us.
-        </p>
-
-        <a href="https://ezgroup.com" class="show-more-btn">Visit us</a>
-
-        <!-- Footer Section -->
+        {% block content %}
+        <p>This is the default email content.</p>
+        {% endblock %}
+        <p><br /><br />Sincerely,<br /><br />EZGroup Team</p>
         <div class="separator"></div>
         <div class="footer">
           <p>

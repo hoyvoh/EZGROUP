@@ -128,6 +128,23 @@ class LikePostView(views.APIView):
         serializer = LikeSerializer(like)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @swagger_auto_schema(
+        responses={204: 'No Content', 400: 'Bad Request'}
+    )
+    def delete(self, request, pk):
+        try:
+            post = Post.objects.get(pk=pk)
+        except Post.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        like = Like.objects.filter(user=request.user, post=post).first()
+
+        if not like:
+            return Response({"detail": "You haven't liked this post."}, status=status.HTTP_400_BAD_REQUEST)
+        like.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class SharePostView(views.APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
