@@ -239,7 +239,9 @@ class MarkNotificationAsReadView(views.APIView):
             return Response({'status': 'Notification marked as read'})
         except Notification.DoesNotExist:
             return Response({'error': 'Notification not found'}, status=404)
-        
+    
+class NotificationDeleteView(views.APIView):
+    permission_classes=[IsAuthenticatedOrReadOnly]
     def delete(self, request, pk):
         notification = self.get_object(pk)
         if notification is None:
@@ -247,3 +249,4 @@ class MarkNotificationAsReadView(views.APIView):
 
         notification.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+

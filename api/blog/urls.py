@@ -13,5 +13,6 @@ urlpatterns = [
     path('posts/<int:post_id>/comments/', views.CommentListCreateView.as_view(), name='comment-list-create'),
     path('posts/<int:post_id>/comment/<int:comment_id>/', views.CommentUpdateDeleteView.as_view(), name='comment-delete-update'),
     path('notifications/', views.NotificationListView.as_view(), name='notification-list'),
+    path('notifications/delete/', views.NotificationDeleteView.as_view(), name='notification-delete'),
     path('notifications/<int:id>/mark-read/', views.MarkNotificationAsReadView.as_view(), name='notification-mark-read'),
 ]
