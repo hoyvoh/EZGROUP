@@ -6,7 +6,6 @@ class CommentConsumer(AsyncWebsocketConsumer):
         self.post_id = self.scope['url_route']['kwargs']['post_id']
         self.room_group_name = f'comments_{self.post_id}'
 
-        # Join the room group
         await self.channel_layer.group_add(
             self.room_group_name,
             self.channel_name
@@ -14,7 +13,6 @@ class CommentConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
     async def disconnect(self, close_code):
-        # Leave the room group
         await self.channel_layer.group_discard(
             self.room_group_name,
             self.channel_name
