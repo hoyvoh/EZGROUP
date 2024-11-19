@@ -19,14 +19,13 @@ class UserSession(models.Model):
     class Meta:
         managed = False
 
-# Normal APIs
 class Post(models.Model):
     title = models.CharField(max_length=255, null=False)
     content = models.TextField(null=False)
     category = models.CharField(max_length=255)
     author_session = models.ForeignKey(
         UserSession,
-        on_delete=models.PROTECT,  # Prevents deletion if referenced by a post
+        on_delete=models.PROTECT, 
         related_name="posts"
     )
     author_name = models.CharField(max_length=255, blank=True) 
@@ -57,7 +56,7 @@ class Image(models.Model):
 
 # Managed by consumers
 class Comment(models.Model):
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments", null=False)
+    post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name="comments", null=False)
     content = models.TextField(null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     commenter_name = models.CharField(max_length=100, null=False, default='Annonymous')
@@ -69,7 +68,7 @@ class Comment(models.Model):
         managed = False
     
 class Like(models.Model):
-    user = models.ForeignKey(UserSession, on_delete=models.CASCADE, related_name="likes")
+    user = models.ForeignKey('UserSession', on_delete=models.CASCADE, related_name="likes")
     post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name="likes", null=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -81,7 +80,7 @@ class Like(models.Model):
         return f"{self.user.username} likes {self.post.title}"
     
 class Share(models.Model):
-    user = models.ForeignKey(UserSession, on_delete=models.CASCADE, related_name="shares", null=False)
+    user = models.ForeignKey('UserSession', on_delete=models.CASCADE, related_name="shares", null=False)
     post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name="shares", null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     platform = models.CharField(max_length=100, blank=True, null=True)
@@ -92,7 +91,7 @@ class Share(models.Model):
         managed = False
 
 class Notification(models.Model):
-    user = models.ForeignKey(UserSession, on_delete=models.CASCADE, related_name='notifications', null=False)
+    user = models.ForeignKey('UserSession', on_delete=models.CASCADE, related_name='notifications', null=False)
     message = models.CharField(max_length=255)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
