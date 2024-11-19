@@ -6,23 +6,8 @@ from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 
 
-class IsStaffOrReadOnly(permissions.BasePermission):
-    """Allow read-only access to any user but restrict write access to staff users only."""
-    def has_permission(self, request, view):
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        return request.user.is_authenticated and request.user.is_staff
-
-class IsAuthenticatedOrReadOnly(permissions.BasePermission):
-    """Allow read-only access to any user but restrict write access to authenticated users only."""
-    def has_permission(self, request, view):
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        return request.user.is_authenticated
-
-
-class PostListCreateView(views.APIView):
-    permission_classes = [IsStaffOrReadOnly]
+class PostCreateView(views.APIView):
+    permission_classes = [permissions.AllowAny] # comment this out or permissions.IsAuthenticated to seal the view
 
     @swagger_auto_schema(
         request_body=PostSerializer,  
@@ -35,15 +20,28 @@ class PostListCreateView(views.APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class PostListView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
     def get(self, request):
         posts = Post.objects.all()
         serializer = PostSerializer(posts, many=True)
         return Response(serializer.data)
 
 
+class PostDetails(views.APIView):
+    permission_classes = [permissions.AllowAny]
 
-class PostDetailUpdateDeleteView(views.APIView):
-    permission_classes = [IsStaffOrReadOnly]
+    def get_object(self, pk):
+        return get_object_or_404(Comment, pk=pk)
+
+    def get(self, request, pk):
+        post = self.get_object(pk)
+        if post is None:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+class PostUpdateDeleteView(views.APIView):
+    permission_classes = [permissions.AllowAny]
 
     def get_object(self, pk):
         return get_object_or_404(Comment, pk=pk)
@@ -80,8 +78,8 @@ class PostDetailUpdateDeleteView(views.APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
     
 
-class ImageListCreateView(views.APIView):
-    permission_classes = [IsAuthenticatedOrReadOnly]
+class ImageListView(views.APIView):
+    permission_classes = [permissions.AllowAny]
 
     def get(self, request, post_id):
         try:
@@ -92,6 +90,9 @@ class ImageListCreateView(views.APIView):
         images = Image.objects.filter(post=post)
         serializer = ImageSerializer(images, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class ImageCreateView(views.APIView):
+    permission_classes = [permissions.AllowAny]
 
     @swagger_auto_schema(
         request_body=ImageSerializer,
@@ -111,7 +112,7 @@ class ImageListCreateView(views.APIView):
     
     
 class LikePostView(views.APIView):
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.AllowAny]
 
     @swagger_auto_schema(
         request_body=LikeSerializer, 
@@ -147,7 +148,7 @@ class LikePostView(views.APIView):
 
 
 class SharePostView(views.APIView):
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.AllowAny]
 
     @swagger_auto_schema(
         request_body=ShareSerializer, 
@@ -165,8 +166,8 @@ class SharePostView(views.APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class CommentListCreateView(views.APIView):
-    permission_classes = [IsAuthenticatedOrReadOnly]
+class CommentListView(views.APIView):
+    permission_classes = [permissions.AllowAny]
 
     def get(self, request, post_id):
         try:
@@ -177,6 +178,9 @@ class CommentListCreateView(views.APIView):
         comments = Comment.objects.filter(post=post)
         serializer = CommentSerializer(comments, many=True)
         return Response(serializer.data)
+
+class CommentCreateView(views.APIView):
+    permission_classes = [permissions.AllowAny]
 
     @swagger_auto_schema(
         request_body=CommentSerializer, 
@@ -196,7 +200,7 @@ class CommentListCreateView(views.APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class CommentUpdateDeleteView(views.APIView):
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.AllowAny]
     def get_object(self, post_id, comment_id):
         try:
             post = Post.objects.get(id=post_id)
@@ -234,7 +238,7 @@ class CommentUpdateDeleteView(views.APIView):
         return Response({'status': 'Comment deleted'}, status=status.HTTP_204_NO_CONTENT)
 
 class NotificationListView(views.APIView):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.AllowAny]
 
     def get(self, request, *args, **kwargs):
         notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
@@ -242,7 +246,7 @@ class NotificationListView(views.APIView):
         return Response(serializer.data)
 
 class MarkNotificationAsReadView(views.APIView):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly] 
+    permission_classes = [permissions.AllowAny] 
 
     @swagger_auto_schema(
         request_body=NotificationSerializer, 
@@ -258,7 +262,7 @@ class MarkNotificationAsReadView(views.APIView):
             return Response({'error': 'Notification not found'}, status=404)
     
 class NotificationDeleteView(views.APIView):
-    permission_classes=[IsAuthenticatedOrReadOnly]
+    permission_classes=[permissions.AllowAny]
     def delete(self, request, pk):
         notification = self.get_object(pk)
         if notification is None:

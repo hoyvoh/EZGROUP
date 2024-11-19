@@ -77,6 +77,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "corsheaders.middleware.CorsMiddleware",
+    # 'blog.middleware.JWTAuthenticationMiddleware'
 ]
 
 ROOT_URLCONF = 'api.urls'

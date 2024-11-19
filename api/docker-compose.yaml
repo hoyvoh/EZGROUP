@@ -1,0 +1,58 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_container
+    environment:
+      MYSQL_ROOT_PASSWORD: ${PASS}
+      MYSQL_DATABASE: ${DBNAME}
+      MYSQL_USER: ${USER}
+      MYSQL_PASSWORD: ${PASS}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    networks:
+      - backend_network
+    ports:
+      - "3306:3306"
+    entrypoint: ["/bin/sh", "/docker-entrypoint-initdb.d/init-db.sh"]
+
+  redis:
+    image: redis:latest
+    container_name: redis_container
+    networks:
+      - backend_network
+    ports:
+      - "6379:6379"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api_container
+    environment:
+      - MYSQL_HOST=${HOST}
+      - MYSQL_PORT=${PORT}
+      - MYSQL_DATABASE=${DBNAME}
+      - MYSQL_USER=${USER}
+      - MYSQL_PASSWORD=${PASS}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - backend_network
+    ports:
+      - "8000:8000"
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+
+networks:
+  backend_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
