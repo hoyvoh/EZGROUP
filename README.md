@@ -14,8 +14,8 @@ Before you begin, make sure you have the following installed:
 1. Clone this repository:
 
    ```bash
-   git clone <your-repository-url>
-   cd <your-repository-directory>
+   git clone https://github.com/hoyvoh/EZGROUP.git
+   cd api
 2. Ensure that your .env file is set up with the appropriate environment variables for your Django project. This includes sensitive information like database credentials. Example .env:
    ```bash
    MYSQL_ROOT_PASSWORD=root_password
