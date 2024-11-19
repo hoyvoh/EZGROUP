@@ -16,9 +16,10 @@ def send_subscription_emails():
     subject = "Weekly Newsletter"
  
     subscribers = Subscription.objects.all()
-    posts = Post.objects.all()[:6].prefetch_related(
-        Prefetch('images', queryset=Image.objects.all().order_by('id'), to_attr='first_image')
-    )
+    posts = Post.objects.all().order_by('-last_modified')[:6].prefetch_related(
+    Prefetch('images', queryset=Image.objects.all().order_by('id'), to_attr='first_image')
+)
+
     
     for subscriber in subscribers:
         user_email = subscriber.email
