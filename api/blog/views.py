@@ -33,9 +33,9 @@ class PostCreateView(views.APIView):
         data = request.data
         user_data = getattr(request, 'user_data', None)
         if not user_data:
-            data['user_id'] = 'default_id'
-            data['user_name'] = 'default_name'
-            data['user_email'] = 'default_email'
+            data['user_id'] = data['user_id']
+            data['user_name'] = data['user_name']
+            data['user_email'] = data['user_email']
         else:
             data['user_id'] = user_data.get('id')
             data['user_name'] = user_data.get('full_name')
@@ -61,7 +61,7 @@ class PostListView(views.APIView):
         responses={200: PostSerializer(many=True)},
     )
     def get(self, request, *args, **kwargs):
-        posts = Post.objects.all().select_related('author_session').prefetch_related('images')
+        posts = Post.objects.all().select_related('user').prefetch_related('likes', 'shares', 'comments')
         serializer = PostSerializer(posts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
