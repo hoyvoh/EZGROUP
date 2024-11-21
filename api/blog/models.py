@@ -64,7 +64,6 @@ class Comment(models.Model):
     user_id = models.CharField(max_length=255,null=False, default="default")
     user_name = models.CharField(max_length=255,null=False, default="default")
     user_email = models.EmailField(max_length=255, null=False, default="default@email.com")
-
     parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies')
 
     def __str__(self):
