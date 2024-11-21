@@ -6,7 +6,6 @@ from authen.models import User
 from django.contrib.auth.models import AnonymousUser
 
 class UserSession(models.Model):
-    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     session_token = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_anonymous = models.BooleanField(default=True)
@@ -17,7 +16,7 @@ class UserSession(models.Model):
         return "Anonymous Session"
     
     class Meta:
-        managed = False
+        managed = True
 
 class Post(models.Model):
     title = models.CharField(max_length=255, null=False)
@@ -42,7 +41,7 @@ class Post(models.Model):
     def __str__(self):
         return f'Post: {self.title} | by {self.author_name or "Anonymous"}'
     class Meta:
-        managed = False
+        managed = True
     
 class Image(models.Model):
     post = models.ForeignKey('Post', related_name='images', on_delete=models.CASCADE, null=True)
@@ -52,20 +51,22 @@ class Image(models.Model):
     def __str__(self):
         return self.label if self.label else f"Image for {self.post.title}"
     class Meta:
-        managed = False
+        managed = True
 
 # Managed by consumers
 class Comment(models.Model):
     post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name="comments", null=False)
     content = models.TextField(null=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    commenter_name = models.CharField(max_length=100, null=False, default='Annonymous')
+    user = models.ForeignKey('UserSession', on_delete=models.CASCADE, related_name="comment") 
     parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies')
 
     def __str__(self):
         return f"Comment by {self.commenter_name}"
+
     class Meta:
-        managed = False
+        managed = True
+
     
 class Like(models.Model):
     user = models.ForeignKey('UserSession', on_delete=models.CASCADE, related_name="likes")
@@ -74,7 +75,7 @@ class Like(models.Model):
 
     class Meta:
         unique_together = ('user', 'post')
-        managed = False
+        managed = True
 
     def __str__(self):
         return f"{self.user.username} likes {self.post.title}"
@@ -88,7 +89,7 @@ class Share(models.Model):
     def __str__(self):
         return f"{self.user.username} shared {self.post.title}"
     class Meta:
-        managed = False
+        managed = True
 
 class Notification(models.Model):
     user = models.ForeignKey('UserSession', on_delete=models.CASCADE, related_name='notifications', null=False)
@@ -99,5 +100,5 @@ class Notification(models.Model):
     def __str__(self):
         return f"Notification for {self.user.username}: {self.message}"
     class Meta:
-        managed = False
+        managed = True
     

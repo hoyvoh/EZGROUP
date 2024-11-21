@@ -1,10 +1,16 @@
 from rest_framework import serializers
-from .models import Post, Image, Comment, Like, Share, Notification
+from .models import Post, Image, Comment, Like, Share, Notification, UserSession
 
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
         fields = ['id', 'post', 'image_url', 'label']
+
+class UserSessionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserSession
+        fields = ['id', 'session_token', 'created_at', 'is_anonymous']
+        read_only_fields = ['id', 'session_token', 'created_at']
 
 class PostSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source='author_session.user.get_full_name', read_only=True)
