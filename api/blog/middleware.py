@@ -8,16 +8,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 NON_SECURE_PATHS = [
-    r"/auth/logout",
-    r"/auth/register",
-    r"/auth/login",
-    r"/blog/posts/",
-    r"/blog/posts/\d+/details/",  
-    r"/blog/posts/\d+/like/",     
-    r"/blog/posts/\d+/images/",   
-    r"/blog/posts/\d+/comments/", 
-    r"/blog/notifications/",
-    r"/subscribe/"
+    r"/api/v1/auth/logout",
+    r"/api/v1/auth/register",
+    r"/api/v1/auth/login",
+    r"/api/v1/blog/posts/",
+    r"/api/v1/blog/posts/\d+/details/",  
+    r"/api/v1/blog/posts/\d+/like/",     
+    r"/api/v1/blog/posts/\d+/images/",   
+    r"/api/v1/blog/posts/\d+/comments/", 
+    r"/api/v1/blog/notifications/",
+    r"/api/v1/subscribe/"
 ]
 
 SSO_URL = os.getenv('SSO_URL')
@@ -41,6 +41,13 @@ class JWTAuthenticationMiddleware:
             response = requests.post(SSO_URL, headers={"Authorization": f"Bearer {token}"})
             if response.status_code != 200 or response.json().get("EC") != 1:
                 return JsonResponse({"error": "User not authenticated"}, status=401)
+
+            user_data = response.json().get('user')
+            if user_data:
+                request.user_data = user_data  
+            else:
+                return JsonResponse({"error": "User data not found in response"}, status=401)
+
         except Exception as e:
             return JsonResponse({"error": "Error while validating token: " + str(e)}, status=500)
 
@@ -62,6 +69,13 @@ class JWTAuthenticationMiddleware:
                 async with session.post(SSO_URL, headers={"Authorization": f"Bearer {token}"}) as response:
                     if response.status != 200 or (await response.json()).get("EC") != 1:
                         return JsonResponse({"error": "User not authenticated"}, status=401)
+
+                    user_data = (await response.json()).get('user')
+                    if user_data:
+                        request.user_data = user_data 
+                    else:
+                        return JsonResponse({"error": "User data not found in response"}, status=401)
+
         except Exception as e:
             return JsonResponse({"error": "Error while validating token: " + str(e)}, status=500)
 
