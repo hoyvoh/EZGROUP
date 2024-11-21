@@ -12,12 +12,26 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./mysql-init:/docker-entrypoint-initdb.d
-      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+      # Removed the line mapping init-db.sh directly to avoid conflicts
     networks:
       - backend_network
     ports:
       - "3306:3306"
-    entrypoint: ["/bin/sh", "/docker-entrypoint-initdb.d/init-db.sh"]
+    healthcheck: # Added healthcheck to ensure readiness before dependent services start
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "${USER}",
+          "--password=${PASS}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:latest
@@ -26,6 +40,11 @@ services:
       - backend_network
     ports:
       - "6379:6379"
+    healthcheck: # Added healthcheck for Redis as well
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   api:
     build:
@@ -33,13 +52,13 @@ services:
       dockerfile: Dockerfile
     container_name: api_container
     environment:
-      - MYSQL_HOST=${HOST}
-      - MYSQL_PORT=${PORT}
-      - MYSQL_DATABASE=${DBNAME}
-      - MYSQL_USER=${USER}
-      - MYSQL_PASSWORD=${PASS}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      MYSQL_HOST: mysql # Direct reference to the service name
+      MYSQL_PORT: 3306 # Use the default MySQL port
+      MYSQL_DATABASE: ${DBNAME}
+      MYSQL_USER: ${USER}
+      MYSQL_PASSWORD: ${PASS}
+      REDIS_HOST: redis # Direct reference to the service name
+      REDIS_PORT: 6379
     depends_on:
       - mysql
       - redis
@@ -48,6 +67,11 @@ services:
     ports:
       - "8000:8000"
     command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    healthcheck: # Optional: Add a healthcheck for your API service
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 networks:
   backend_network:
