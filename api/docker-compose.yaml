@@ -12,12 +12,11 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./mysql-init:/docker-entrypoint-initdb.d
-      # Removed the line mapping init-db.sh directly to avoid conflicts
     networks:
       - backend_network
     ports:
       - "3306:3306"
-    healthcheck: # Added healthcheck to ensure readiness before dependent services start
+    healthcheck:
       test:
         [
           "CMD",
@@ -40,7 +39,7 @@ services:
       - backend_network
     ports:
       - "6379:6379"
-    healthcheck: # Added healthcheck for Redis as well
+    healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
@@ -52,13 +51,14 @@ services:
       dockerfile: Dockerfile
     container_name: api_container
     environment:
-      MYSQL_HOST: mysql # Direct reference to the service name
-      MYSQL_PORT: 3306 # Use the default MySQL port
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
       MYSQL_DATABASE: ${DBNAME}
       MYSQL_USER: ${USER}
       MYSQL_PASSWORD: ${PASS}
-      REDIS_HOST: redis # Direct reference to the service name
+      REDIS_HOST: redis
       REDIS_PORT: 6379
+      CELERY_BROKER_URL: redis://redis:6379/0
     depends_on:
       - mysql
       - redis
@@ -67,11 +67,53 @@ services:
     ports:
       - "8000:8000"
     command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-    healthcheck: # Optional: Add a healthcheck for your API service
+    healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000"]
       interval: 10s
       timeout: 5s
       retries: 3
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: celery_worker
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: django-db
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: ${DBNAME}
+      MYSQL_USER: ${USER}
+      MYSQL_PASSWORD: ${PASS}
+      REDIS_HOST: redis
+    depends_on:
+      - redis
+      - mysql
+    networks:
+      - backend_network
+    command: celery -A your_project worker --loglevel=info
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: celery_beat
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: django-db
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: ${DBNAME}
+      MYSQL_USER: ${USER}
+      MYSQL_PASSWORD: ${PASS}
+      REDIS_HOST: redis
+    depends_on:
+      - redis
+      - mysql
+    networks:
+      - backend_network
+    command: celery -A your_project beat --loglevel=info
 
 networks:
   backend_network:
