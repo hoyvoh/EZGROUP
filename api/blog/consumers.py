@@ -4,70 +4,61 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 class CommentConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.post_id = self.scope['url_route']['kwargs']['post_id']
-        self.room_group_name = f'comments_{self.post_id}'
+        self.group_name = f"post_{self.post_id}"
 
         await self.channel_layer.group_add(
-            self.room_group_name,
+            self.group_name,
             self.channel_name
         )
         await self.accept()
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(
-            self.room_group_name,
+            self.group_name,
             self.channel_name
         )
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-        comment = data['comment']
-        user = self.scope['user'].username  # Ensure user authentication is handled
+        action = data.get('action')
 
-        # Send comment to group
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                'type': 'comment_message',
-                'comment': comment,
-                'user': user,
-            }
-        )
+        if action == 'new_comment':
+            await self.channel_layer.group_send(
+                self.group_name,
+                {
+                    "type": "send_comment",
+                    "comment_data": data['comment_data'],
+                }
+            )
+        elif action == 'new_notification':
+            await self.channel_layer.group_send(
+                self.group_name,
+                {
+                    "type": "send_notification",
+                    "notification_data": data['notification_data'],
+                }
+            )
 
-    async def comment_message(self, event):
-        comment = event['comment']
-        user = event['user']
-
-        # Send message to WebSocket
+    async def send_comment(self, event):
         await self.send(text_data=json.dumps({
-            'comment': comment,
-            'user': user,
+            "type": "comment",
+            "data": event["comment_data"]
+        }))
+
+    async def send_notification(self, event):
+        await self.send(text_data=json.dumps({
+            "type": "notification",
+            "data": event["notification_data"]
         }))
 
 class NotificationConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.room_group_name = 'notifications'
-
-        # Join the room group
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
+        self.group_name = f"user_{self.scope['user'].id}"
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
-    async def receive(self, text_data):
-        # Custom logic for receiving data (e.g., a user triggers a notification)
-        pass
-
-    async def notification_message(self, event):
-        message = event['message']
-
-        # Send notification to WebSocket
-        await self.send(text_data=json.dumps({
-            'message': message,
-        }))
+    async def send_notification(self, event):
+        await self.send(text_data=json.dumps({"message": event["message"]}))

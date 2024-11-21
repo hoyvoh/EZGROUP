@@ -4,6 +4,8 @@ from .serializers import PostSerializer, ImageSerializer, LikeSerializer, Commen
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 from drf_yasg import openapi
 
 
@@ -32,11 +34,7 @@ class PostCreateView(views.APIView):
     def post(self, request, *args, **kwargs):
         data = request.data
         user_data = getattr(request, 'user_data', None)
-        if not user_data:
-            data['user_id'] = data['user_id']
-            data['user_name'] = data['user_name']
-            data['user_email'] = data['user_email']
-        else:
+        if user_data:
             data['user_id'] = user_data.get('id')
             data['user_name'] = user_data.get('full_name')
             data['user_email'] = user_data.get('email')
@@ -250,22 +248,41 @@ class CommentCreateView(views.APIView):
 
         user_data = getattr(request, 'user_data', None)
         data = request.data
-        if not user_data:
-            data['user_id'] = 'default_id'
-            data['user_name'] = 'default_name'
-            data['user_email'] = 'default_email'
-        else:
+        if user_data:
             data['user_id'] = user_data.get('id')
             data['user_name'] = user_data.get('full_name')
             data['user_email'] = user_data.get('email')
 
         serializer = CommentSerializer(data=data)
         if serializer.is_valid():
-            serializer.save(post=post)  
+            comment = serializer.save(post=post)  
+
+            self.create_notification(
+                recipient_id=post.user_id,  
+                recipient_name=post.user_name,
+                recipient_email=post.user_email,
+                message=f"Your post '{post.title}' has a new comment by {data['user_name']}: '{comment.content}'"
+            )  
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    
+    def create_notification(self, recipient_id, recipient_name, recipient_email, message):
+        Notification.objects.create(
+            user_id=recipient_id,
+            user_name=recipient_name,
+            user_email=recipient_email,
+            message=message,
+        )
+        
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"user_{recipient_id}", 
+            {
+                "type": "send_notification",
+                "message": message,
+            }
+        )
     
 class CommentUpdateDeleteView(views.APIView):
     permission_classes = [permissions.AllowAny]
@@ -381,7 +398,13 @@ class LikeCreateDeleteView(views.APIView):
 
         serializer = LikeSerializer(data=data)
         if serializer.is_valid():
-            serializer.save(post=post) 
+            serializer.save(post=post)
+            self.create_notification(
+                recipient_id=post.user_id,  
+                recipient_name=post.user_name,
+                recipient_email=post.user_email,
+                message=f"Your post '{post.title}' was liked by {data['user_name']}."
+            )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -419,6 +442,21 @@ class LikeCreateDeleteView(views.APIView):
         like.delete()
         return Response({"detail": "Like removed successfully"}, status=status.HTTP_204_NO_CONTENT)
 
+    def create_notification(self, recipient_id, recipient_name, recipient_email, message):
+        Notification.objects.create(
+            user_id=recipient_id,
+            user_name=recipient_name,
+            user_email=recipient_email,
+            message=message,
+        )
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"user_{recipient_id}", 
+            {
+                "type": "send_notification",
+                "message": message,
+            }
+        )
 
 class NotificationListView(views.APIView):
     permission_classes = [permissions.AllowAny]
