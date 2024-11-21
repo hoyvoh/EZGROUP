@@ -41,12 +41,6 @@ class Post(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
 
-    def save(self, *args, **kwargs):
-        if self.author_session and not self.author_name:
-            self.author_name = self.author_session.user.get_full_name()
-            self.author_email = self.author_session.user.email
-        super().save(*args, **kwargs)
-
     def __str__(self):
         return f'Post: {self.title} | by {self.author_name or "Anonymous"}'
     class Meta:
