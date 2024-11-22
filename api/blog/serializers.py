@@ -7,7 +7,7 @@ class ImageSerializer(serializers.ModelSerializer):
     file = serializers.ImageField(write_only=True, required=True)
     class Meta:
         model = Image
-        fields = ['id', 'post', 'label', 'file']
+        fields = ['id', 'post', 'label', 'image_url', 'file']
         read_only_fields = ['image_url']
     
     def create(self, validated_data):

@@ -58,8 +58,8 @@ class PostListView(views.APIView):
         operation_summary="List all posts",
         responses={200: PostSerializer(many=True)},
     )
-    def get(self, request, *args, **kwargs):
-        posts = Post.objects.all().select_related('user').prefetch_related('likes', 'shares', 'comments')
+    def get(self, request):
+        posts = Post.objects.all().prefetch_related('likes',  'comments')
         serializer = PostSerializer(posts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
