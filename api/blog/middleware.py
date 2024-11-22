@@ -1,6 +1,6 @@
 from django.http import JsonResponse
 import requests
-import aiohttp
+import jwt
 import os
 import re
 from dotenv import load_dotenv
@@ -12,12 +12,15 @@ NON_SECURE_PATHS = [
     r"/api/v1/auth/register",
     r"/api/v1/auth/login",
     r"/api/v1/blog/posts/",
-    r"/api/v1/blog/posts/\d+/details/",  
+    r"/api/v1/blog/posts/\d+/details/", 
+    # r"/api/v1/blogs/posts/create-post/", 
+    # r"/api/v1/blogs/posts/\d+/images/upload/",
     r"/api/v1/blog/posts/\d+/like/",     
     r"/api/v1/blog/posts/\d+/images/",   
     r"/api/v1/blog/posts/\d+/comments/", 
     r"/api/v1/blog/notifications/",
-    r"/api/v1/subscribe/"
+    r"/api/v1/subscribe/",
+    r"/api/docs/"
 ]
 
 SSO_URL = os.getenv('SSO_URL')
@@ -27,56 +30,105 @@ class JWTAuthenticationMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        for path in NON_SECURE_PATHS:
-            if re.match(f"^{path}$", request.path): 
-                return self.get_response(request)
+        path = request.path.rstrip('/')
+        print(f"\nProcessing request for path: {path}")
 
-        auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            return JsonResponse({"error": "Authorization header is missing or malformed"}, status=400)
+        if self.should_skip_auth(path):
+            print(f"Skipping auth for path: {path}")
+            return self.get_response(request)
 
-        token = auth_header.split("Bearer ")[1]
-
-        try:
-            response = requests.post(SSO_URL, headers={"Authorization": f"Bearer {token}"})
-            if response.status_code != 200 or response.json().get("EC") != 1:
-                return JsonResponse({"error": "User not authenticated"}, status=401)
-
-            user_data = response.json().get('user')
-            if user_data:
-                request.user_data = user_data  
-            else:
-                return JsonResponse({"error": "User data not found in response"}, status=401)
-
-        except Exception as e:
-            return JsonResponse({"error": "Error while validating token: " + str(e)}, status=500)
-
-        return self.get_response(request)
-
-    async def async_call(self, request):
-        for path in NON_SECURE_PATHS:
-            if re.match(f"^{path}$", request.path):  
-                return await self.get_response(request)
-
-        auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            return JsonResponse({"error": "Authorization header is missing or malformed"}, status=400)
-
-        token = auth_header.split("Bearer ")[1]
+        token = self.extract_token(request)
+        if not token:
+            return JsonResponse({
+                "EC": -1,
+                "EM": "Bearer token is required",
+                "DT": ""
+            }, status=401)
 
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(SSO_URL, headers={"Authorization": f"Bearer {token}"}) as response:
-                    if response.status != 200 or (await response.json()).get("EC") != 1:
-                        return JsonResponse({"error": "User not authenticated"}, status=401)
+            verify_url = SSO_URL
+            print(f"Verifying token at: {verify_url}")
+            
+            response = requests.post(
+                verify_url,
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json"
+                },
+                timeout=5
+            )
+            
+            data = response.json()
+            print(f"SSO Response Data: {data}")
 
-                    user_data = (await response.json()).get('user')
-                    if user_data:
-                        request.user_data = user_data 
+            if response.status_code == 200 and data.get("EC") == 1:
+                try:
+                    decoded = jwt.decode(token, options={"verify_signature": False})
+                    print(f"Decoded token: {decoded}")
+                    
+                    request.user_data = {
+                        'id': decoded.get('user_id'),
+                        'email': decoded.get('email'),
+                        'full_name': f"{decoded.get('first_name', '')} {decoded.get('last_name', '')}".strip(),
+                        'role': decoded.get('roleWithPermission', {}),
+                        'permissions': [
+                            perm['url'] for perm in decoded.get('roleWithPermission', {}).get('Permissions', [])
+                        ]
+                    }
+                    print(f"Attached user data: {request.user_data}")
+                    
+                    current_path = path.replace('/api/v1', '')
+                    if current_path in request.user_data['permissions']:
+                        print(f"User has permission for path: {current_path}")
+                        request.auth_token = token
+                        return self.get_response(request)
                     else:
-                        return JsonResponse({"error": "User data not found in response"}, status=401)
+                        print(f"User lacks permission for path: {current_path}")
+                        return JsonResponse({
+                            "EC": -1,
+                            "EM": "Permission denied",
+                            "DT": ""
+                        }, status=403)
+                    
+                except jwt.InvalidTokenError as e:
+                    print(f"Token decode error: {str(e)}")
+                    return JsonResponse({
+                        "EC": -1,
+                        "EM": "Invalid token format",
+                        "DT": ""
+                    }, status=401)
+            
+            return JsonResponse({
+                "EC": -1,
+                "EM": data.get("EM", "Invalid token"),
+                "DT": ""
+            }, status=401)
 
+        except requests.RequestException as e:
+            print(f"Request error: {str(e)}")
+            return JsonResponse({
+                "EC": -1,
+                "EM": f"SSO service error: {str(e)}",
+                "DT": ""
+            }, status=503)
         except Exception as e:
-            return JsonResponse({"error": "Error while validating token: " + str(e)}, status=500)
+            print(f"Unexpected error: {str(e)}")
+            return JsonResponse({
+                "EC": -1,
+                "EM": f"Authentication error: {str(e)}",
+                "DT": ""
+            }, status=500)
 
-        return await self.get_response(request)
+    def extract_token(self, request):
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+            print(f"Extracted token: {token[:30]}...")
+            return token
+        return None
+
+    def should_skip_auth(self, path):
+        for pattern in NON_SECURE_PATHS:
+            if re.match(pattern, path):
+                return True
+        return False
