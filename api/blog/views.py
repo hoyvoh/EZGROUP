@@ -7,6 +7,7 @@ from drf_yasg.utils import swagger_auto_schema
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from drf_yasg import openapi
+from rest_framework.parsers import JSONParser
 
 
 class PostCreateView(views.APIView):
@@ -46,7 +47,11 @@ class PostCreateView(views.APIView):
             for image_data in images_data:
                 Image.objects.create(post=post, **image_data)
 
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response({
+                "EC": 1,
+                "EM": "Success",
+                "DT": serializer.data
+            }, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -169,6 +174,7 @@ class ImageListView(views.APIView):
 
 class ImageCreateView(views.APIView):
     permission_classes = [permissions.AllowAny]
+    parser_classes = (JSONParser,)
 
     @swagger_auto_schema(
         operation_summary="Create a post",
@@ -189,17 +195,45 @@ class ImageCreateView(views.APIView):
             403: "Permission denied",
         },
     )
-    def post(self, request, post_id):
+    def post(self, request, pk, *args, **kwargs):
         try:
-            post = Post.objects.get(id=post_id)
-        except Post.DoesNotExist:
-            return Response({'error': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
+            post = Post.objects.get(id=pk)
+            
+            image_url = request.data.get('image_url')
+            label = request.data.get('label', '')
 
-        serializer = ImageSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(post=post)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            if not image_url:
+                return Response({
+                    "EC": -1,
+                    "EM": "No image URL provided",
+                    "DT": ""
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            image = Image.objects.create(
+                post=post,
+                image_url=image_url,
+                label=label
+            )
+
+            serializer = ImageSerializer(image)
+            return Response({
+                "EC": 1,
+                "EM": "Image saved successfully",
+                "DT": serializer.data
+            }, status=status.HTTP_201_CREATED)
+
+        except Post.DoesNotExist:
+            return Response({
+                "EC": -1,
+                "EM": "Post not found",
+                "DT": ""
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                "EC": -1,
+                "EM": f"Error saving image: {str(e)}",
+                "DT": ""
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class CommentListView(views.APIView):
     permission_classes = [permissions.AllowAny]
