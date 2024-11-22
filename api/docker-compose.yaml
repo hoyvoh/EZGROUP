@@ -16,21 +16,6 @@ services:
       - backend_network
     ports:
       - "3306:3306"
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "mysqladmin",
-          "ping",
-          "-h",
-          "localhost",
-          "-u",
-          "${USER}",
-          "--password=${PASS}",
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   redis:
     image: redis:latest
@@ -39,17 +24,14 @@ services:
       - backend_network
     ports:
       - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   api:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: api_container
+    env_file:
+      - .env
     environment:
       MYSQL_HOST: mysql
       MYSQL_PORT: 3306
@@ -59,6 +41,10 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       CELERY_BROKER_URL: redis://redis:6379/0
+      USE_S3: ${USE_S3}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_STORAGE_BUCKET_NAME: ${AWS_STORAGE_BUCKET_NAME}
     depends_on:
       - mysql
       - redis
@@ -67,11 +53,6 @@ services:
     ports:
       - "8000:8000"
     command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
 
   celery:
     build:
@@ -92,7 +73,7 @@ services:
       - mysql
     networks:
       - backend_network
-    command: celery -A your_project worker --loglevel=info
+    command: celery -A api worker --loglevel=info
 
   celery_beat:
     build:
@@ -113,7 +94,7 @@ services:
       - mysql
     networks:
       - backend_network
-    command: celery -A your_project beat --loglevel=info
+    command: celery -A api beat --loglevel=info
 
 networks:
   backend_network:

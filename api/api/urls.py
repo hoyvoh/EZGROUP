@@ -3,6 +3,7 @@ from django.urls import path, include
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework.permissions import AllowAny
+from django.conf import settings
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -16,7 +17,7 @@ schema_view = get_schema_view(
         license=openapi.License(name="MIT"),
     ),
     public=True,
-    permission_classes=[AllowAny],  # Use the appropriate permission class for your API
+    permission_classes=[AllowAny],  
 )
 
 urlpatterns = [

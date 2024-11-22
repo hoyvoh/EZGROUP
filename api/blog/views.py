@@ -25,7 +25,7 @@ class PostCreateView(views.APIView):
             )
         ],
         responses={  
-            201: "Post Created",
+            201: PostSerializer,
             400: "Invalid input",
             401: "Authentication failed",
             403: "Permission denied",
@@ -82,11 +82,11 @@ class PostDetails(views.APIView):
 class PostUpdateDeleteView(views.APIView):
     permission_classes = [permissions.AllowAny]
 
-    def get_object(self, pk):
-        return get_object_or_404(Post, pk=pk)
+    def get_object(self, post_id):
+        return get_object_or_404(Post, pk=post_id)
 
-    def get(self, request, pk):
-        post = self.get_object(pk)
+    def get(self, request, post_id):
+        post = self.get_object(post_id)
         serializer = PostSerializer(post)
         return Response(serializer.data)
 
@@ -109,8 +109,8 @@ class PostUpdateDeleteView(views.APIView):
             403: "Permission denied",
         },
     )
-    def put(self, request, pk):
-        post = self.get_object(pk)
+    def put(self, request, post_id):
+        post = self.get_object(post_id)
         user_data = getattr(request, 'user_data', None)
         if not user_data:
             return Response({"error": "User not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
@@ -166,20 +166,28 @@ class ImageListView(views.APIView):
         images = post.images.all()
         serializer = ImageSerializer(images, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
+from rest_framework.parsers import MultiPartParser, FormParser
 class ImageCreateView(views.APIView):
     permission_classes = [permissions.AllowAny]
+    parser_classes = [MultiPartParser, FormParser]
 
     @swagger_auto_schema(
-        operation_summary="Create a post",
-        request_body=ImageSerializer,
-        manual_parameters=[
+        operation_summary="Create an image for a post",
+        request_body=ImageSerializer, 
+        manual_parameters=[  
             openapi.Parameter(
                 'Authorization',
                 openapi.IN_HEADER,
                 description="Session token for the user accessing the image",
                 type=openapi.TYPE_STRING,
                 required=True,
+            ),
+            openapi.Parameter(
+                'file',  
+                openapi.IN_FORM, 
+                description="Image file to be uploaded",
+                type=openapi.TYPE_FILE,
+                required=True
             )
         ],
         responses={
@@ -187,7 +195,7 @@ class ImageCreateView(views.APIView):
             400: "Invalid input",
             401: "Authentication failed",
             403: "Permission denied",
-        },
+        }
     )
     def post(self, request, post_id):
         try:
@@ -496,7 +504,7 @@ class MarkNotificationAsReadView(views.APIView):
             404: "Notification not found",
         },
     )
-    def post(self, request, notification_id, *args, **kwargs):
+    def post(self, request, notification_id):
         user_data = getattr(request, 'user_data', None)
         if not user_data:
             return Response({"error": "User not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)

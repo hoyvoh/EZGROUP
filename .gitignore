@@ -5,4 +5,5 @@
 **/package-lock.json
 **/package.json
 **/.ipynb_checkpoints
-
+**/static
+**/staticfiles

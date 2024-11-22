@@ -1,35 +1,6 @@
 from django.db import models
-from django.contrib.auth import get_user_model
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
-from authen.models import User
-from django.contrib.auth.models import AnonymousUser
-
-# class UserSession(models.Model):
-#     session_token = models.CharField(max_length=255, unique=True)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     is_anonymous = models.BooleanField(default=True)
-#     '''
-#     user_id = models.TextField()
-#     user_name = models.CharField(max_length=255, blank=True)
-#     user_email = models.EmailField(max_length=255, blank=True)
-#     '''
-
-#     def __str__(self):
-#         if self.user:
-#             return f"Session for {self.user.email}"
-#         return "Anonymous Session"
-    
-#     class Meta:
-#         managed = True
-
-# author_session = models.ForeignKey(
-    #     UserSession,
-    #     on_delete=models.PROTECT, 
-    #     related_name="posts"
-    # )
-    # author_name = models.CharField(max_length=255, blank=True) 
-    # author_email = models.EmailField(max_length=255, blank=True) 
+from django.conf import settings
+import boto3
 
 class Post(models.Model):
     title = models.CharField(max_length=255, null=False)
@@ -50,6 +21,25 @@ class Image(models.Model):
     post = models.ForeignKey('Post', related_name='images', on_delete=models.CASCADE, null=True)
     image_url = models.URLField(null=False)
     label = models.CharField(max_length=255, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.label and self.post:
+            self.label = f"Figure: {self.post.title}"
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        if self.image_url:
+            s3_client = boto3.client(
+                's3',
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name=settings.AWS_REGION
+            )
+            bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+            file_key = self.image_url.replace(f'https://{settings.AWS_S3_CUSTOM_DOMAIN}/', '')
+            s3_client.delete_object(Bucket=bucket_name, Key=file_key)
+
+        super().delete(*args, **kwargs)
 
     def __str__(self):
         return self.label if self.label else f"Image for {self.post.title}"
