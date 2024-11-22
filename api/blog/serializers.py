@@ -1,10 +1,37 @@
 from rest_framework import serializers
 from .models import Post, Image, Comment, Like, Notification
+import boto3
+from django.conf import settings
 
 class ImageSerializer(serializers.ModelSerializer):
+    file = serializers.ImageField(write_only=True, required=True)
     class Meta:
         model = Image
-        fields = ['id', 'post', 'image_url', 'label']
+        fields = ['id', 'post', 'label', 'image_url', 'file']
+        read_only_fields = ['image_url']
+    
+    def create(self, validated_data):
+        file = validated_data.pop('file')
+        post = validated_data.get('post')
+        
+        s3_client = boto3.client('s3',
+                                 aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                                 aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,)
+
+        folder = f'{post.id}'
+        
+        file_key = f"{settings.PUBLIC_MEDIA_LOCATION}/{folder}/{file.name}"
+        
+        s3_client.upload_fileobj(file, settings.AWS_STORAGE_BUCKET_NAME, file_key)
+
+        image_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{file_key}"
+
+        image = Image.objects.create(
+            post=post,
+            label=validated_data.get('label', ''),
+            image_url=image_url
+        )
+        return image
 
 class PostSerializer(serializers.ModelSerializer):
     likes_count = serializers.IntegerField(source='likes.count', read_only=True)
