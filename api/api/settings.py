@@ -84,7 +84,7 @@ SWAGGER_SETTINGS = {
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     "corsheaders.middleware.CorsMiddleware",
-    # 'blog.middleware.JWTAuthenticationMiddleware',
+    'blog.middleware.JWTAuthenticationMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

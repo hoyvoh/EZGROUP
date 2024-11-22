@@ -20,7 +20,7 @@ NON_SECURE_PATHS = [
     r"/api/v1/blog/posts/\d+/comments/", 
     r"/api/v1/blog/notifications/",
     r"/api/v1/subscribe/",
-    r"/api/docs/"
+    r"/api/docs/",
 ]
 
 SSO_URL = os.getenv('SSO_URL')
@@ -36,7 +36,13 @@ class JWTAuthenticationMiddleware:
         if self.should_skip_auth(path):
             print(f"Skipping auth for path: {path}")
             return self.get_response(request)
-
+        for pattern in NON_SECURE_PATHS:
+            if re.match(pattern, path):
+                print(f"Path {path} matches pattern {pattern}, skipping auth")
+            return self.get_response(request)
+    
+        print(f"Path {path} requires authentication")
+            
         token = self.extract_token(request)
         if not token:
             return JsonResponse({

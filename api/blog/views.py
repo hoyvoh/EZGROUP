@@ -72,17 +72,25 @@ class PostListView(views.APIView):
 class PostDetails(views.APIView):
     permission_classes = [permissions.AllowAny]
 
-    def get_object(self, pk):
-        return get_object_or_404(Comment, pk=pk)
+    def get_object(self, post_id):
+        return get_object_or_404(Post, pk=post_id)
 
     @swagger_auto_schema(
         operation_summary="Post Details",
-        responses={200: PostSerializer(many=True)},
+        responses={
+            200: PostSerializer,
+            404: "Post not found"
+        },
     )
-    def get(self, request, pk):
-        post = self.get_object(pk)
-        if post is None:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+    def get(self, request, post_id):
+        post = self.get_object(post_id)
+
+        serializer = PostSerializer(post)
+        return Response({
+            "EC": 1,
+            "EM": "Success",
+            "DT": serializer.data
+        }, status=status.HTTP_200_OK)
 
 class PostUpdateDeleteView(views.APIView):
     permission_classes = [permissions.AllowAny]
@@ -202,9 +210,9 @@ class ImageCreateView(views.APIView):
             403: "Permission denied",
         }
     )
-    def post(self, request, pk, *args, **kwargs):
+    def post(self, request, post_id, *args, **kwargs):
         try:
-            post = Post.objects.get(id=pk)
+            post = Post.objects.get(pk=post_id)
             
             image_url = request.data.get('image_url')
             label = request.data.get('label', '')
