@@ -2,7 +2,7 @@ from celery import shared_task
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from .models import Subscription
-from ..blog.models import Post, Image
+from blog.models import Post, Image
 from django.conf import settings
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText

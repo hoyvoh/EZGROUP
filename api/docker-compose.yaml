@@ -29,22 +29,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    restart: unless-stopped
     container_name: api_container
     env_file:
       - .env
-    environment:
-      MYSQL_HOST: mysql
-      MYSQL_PORT: 3306
-      MYSQL_DATABASE: ${DBNAME}
-      MYSQL_USER: ${USER}
-      MYSQL_PASSWORD: ${PASS}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      CELERY_BROKER_URL: redis://redis:6379/0
-      USE_S3: ${USE_S3}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
-      AWS_STORAGE_BUCKET_NAME: ${AWS_STORAGE_BUCKET_NAME}
     depends_on:
       - mysql
       - redis
@@ -52,49 +40,8 @@ services:
       - backend_network
     ports:
       - "8000:8000"
-    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-
-  celery:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: celery_worker
-    environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: django-db
-      MYSQL_HOST: mysql
-      MYSQL_PORT: 3306
-      MYSQL_DATABASE: ${DBNAME}
-      MYSQL_USER: ${USER}
-      MYSQL_PASSWORD: ${PASS}
-      REDIS_HOST: redis
-    depends_on:
-      - redis
-      - mysql
-    networks:
-      - backend_network
-    command: celery -A api worker --loglevel=info
-
-  celery_beat:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: celery_beat
-    environment:
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: django-db
-      MYSQL_HOST: mysql
-      MYSQL_PORT: 3306
-      MYSQL_DATABASE: ${DBNAME}
-      MYSQL_USER: ${USER}
-      MYSQL_PASSWORD: ${PASS}
-      REDIS_HOST: redis
-    depends_on:
-      - redis
-      - mysql
-    networks:
-      - backend_network
-    command: celery -A api beat --loglevel=info
+    command: >
+      sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
 
 networks:
   backend_network:
