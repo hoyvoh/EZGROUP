@@ -2,7 +2,7 @@ from celery import shared_task
 import requests
 import pandas as pd
 from bs4 import BeautifulSoup
-from .models import Post, UserSession, Image
+from .models import Post, Image
 from django.utils import timezone
 
 
@@ -84,18 +84,13 @@ def update_news():
             print(f"Post with title '{data['title']}' already exists. Skipping...")
             continue
 
-        anonymous_session, created = UserSession.objects.get_or_create(
-            is_anonymous=True,
-            session_token="anonymous_" + str(timezone.now().timestamp())
-        )
-
         post = Post(
                 title=data['title'],
                 content=data['content'],
                 category=data['category'],
-                author_session=anonymous_session,
-                author_name=f'{data['author']} | {data['source']}',  # Since it's an anonymous user
-                author_email=f'{data['author']}.{data['source']}@ezmail.com',  # No real email
+                user_id=f'{data['author']}-{data['title']}',
+                user_name=f'{data['author']} | {data['source']}',  # Since it's an anonymous user
+                user_email=f'{data['author']}.{data['source']}@ezmail.com',  # No real email
             )
         post.save()
 
