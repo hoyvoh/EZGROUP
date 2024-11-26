@@ -214,10 +214,12 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_APP_PASSWORD')  
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 
+CORS_ORIGIN_ALLOW_ALL = True
+
 CORS_ALLOWED_ORIGINS = [
-    "http://0.0.0.0:5173",
-    "http://0.0.0.0:8080",
-    "http://0.0.0.0:8000"
+    "http://0.0.0.0" , # :5173 : frontend ; :8000 : newsletter
+    "http://54.252.99.228", # :8080 : SSO
+    "http://localhost:5172"
 ]
 
 CORS_ALLOW_CREDENTIALS = True
