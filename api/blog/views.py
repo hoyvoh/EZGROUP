@@ -179,30 +179,25 @@ class ImageListView(views.APIView):
         images = post.images.all()
         serializer = ImageSerializer(images, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 from rest_framework.parsers import MultiPartParser, FormParser
+
 class ImageCreateView(views.APIView):
-    permission_classes = [permissions.AllowAny]
-    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [permissions.IsAuthenticated]  
+    parser_classes = [MultiPartParser, FormParser]  
 
     @swagger_auto_schema(
         operation_summary="Create an image for a post",
-        request_body=ImageSerializer, 
-        manual_parameters=[  
+        manual_parameters=[
             openapi.Parameter(
                 'Authorization',
                 openapi.IN_HEADER,
                 description="Session token for the user accessing the image",
                 type=openapi.TYPE_STRING,
                 required=True,
-            ),
-            openapi.Parameter(
-                'file',  
-                openapi.IN_FORM, 
-                description="Image file to be uploaded",
-                type=openapi.TYPE_FILE,
-                required=True
             )
         ],
+        request_body=ImageSerializer,
         responses={
             201: "Image uploaded successfully",
             400: "Invalid input",
@@ -212,43 +207,35 @@ class ImageCreateView(views.APIView):
     )
     def post(self, request, post_id, *args, **kwargs):
         try:
-            post = Post.objects.get(pk=post_id)
+            try:
+                post = Post.objects.get(pk=post_id)
+            except Post.DoesNotExist:
+                return Response(
+                    {"EC": -1, "EM": "Post not found", "DT": ""},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            request_data = request.data.copy()
+            request_data["post"] = post.id
+
+            serializer = ImageSerializer(data=request_data)
+            if not serializer.is_valid():
+                return Response(
+                    {"EC": -1, "EM": "Invalid input", "DT": serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             
-            image_url = request.data.get('image_url')
-            label = request.data.get('label', '')
-
-            if not image_url:
-                return Response({
-                    "EC": -1,
-                    "EM": "No image URL provided",
-                    "DT": ""
-                }, status=status.HTTP_400_BAD_REQUEST)
-
-            image = Image.objects.create(
-                post=post,
-                image_url=image_url,
-                label=label
+            image = serializer.save()
+            return Response(
+                {"EC": 1, "EM": "Image saved successfully", "DT": serializer.data},
+                status=status.HTTP_201_CREATED,
             )
 
-            serializer = ImageSerializer(image)
-            return Response({
-                "EC": 1,
-                "EM": "Image saved successfully",
-                "DT": serializer.data
-            }, status=status.HTTP_201_CREATED)
-
-        except Post.DoesNotExist:
-            return Response({
-                "EC": -1,
-                "EM": "Post not found",
-                "DT": ""
-            }, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({
-                "EC": -1,
-                "EM": f"Error saving image: {str(e)}",
-                "DT": ""
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"EC": -1, "EM": f"Error saving image: {str(e)}", "DT": ""},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 class CommentListView(views.APIView):
     permission_classes = [permissions.AllowAny]
