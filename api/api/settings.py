@@ -63,7 +63,6 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'authen',
     'blog',
-    'subscribe',
     "rest_framework",
     'drf_yasg',
     "corsheaders",
@@ -215,29 +214,10 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_APP_PASSWORD')  
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 
-CELERY_BROKER_URL = 'redis://redis:6379/0'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
-CELERY_TIMEZONE='Asia/Ho_Chi_Minh'
-CELERY_ENABLE_UTC = False 
-
-CELERY_BEAT_SCHEDULE = {
-    'send-weekly-newsletter': {
-        'task': 'api.tasks.send_subscription_emails',
-        'schedule': crontab(day_of_week=1, hour=7, minute=0), 
-        'args': (),
-    },
-    'update_news_to_posts': {
-        'task': 'api.tasks.update_news',
-        'schedule': crontab(day_of_week=1, hour=6, minute=0), 
-        'args': (),
-    },
-}
-
 CORS_ALLOWED_ORIGINS = [
     "http://0.0.0.0:5173",
-    "http://0.0.0.0:8080"
+    "http://0.0.0.0:8080",
+    "http://0.0.0.0:8000"
 ]
 
 CORS_ALLOW_CREDENTIALS = True
