@@ -31,6 +31,8 @@ cd EZLIFE/api
 docker-compose up --build
 ```
 
+Now you can access the API documents at 0.0.0.0:8000/api/docs/ to explore more further.
+
 ## Step 3: Stop docker
 When you are done, make sure you have your containers cleaned up.
 ```
