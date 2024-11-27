@@ -51,7 +51,7 @@ class PostCreateView(views.APIView):
             
             try:
                 sending_data = data
-                sending_data['created_at'] = post.created_at
+                sending_data['created_at'] = post.created_at.isoformat()
                 sending_data['id'] = post.id
                 if len(images_data) >0:
                     sending_data['first_image'] = Image.objects.filter(post_id=post.id).first().image_url
