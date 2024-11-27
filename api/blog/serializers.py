@@ -41,7 +41,7 @@ class PostSerializer(serializers.ModelSerializer):
         model = Post
         fields = [
             'id', 'title', 'content', 'category', 'user_id', 
-            'user_name', 'user_email',
+            'user_name', 'user_email','created_at',
             'likes_count', 'shares_count', 'comments_count'
         ]
         read_only_fields = ['created_at', 'last_modified']

@@ -7,8 +7,10 @@ from drf_yasg.utils import swagger_auto_schema
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from drf_yasg import openapi
-from rest_framework.parsers import JSONParser
-
+import requests
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 class PostCreateView(views.APIView):
     permission_classes = [permissions.AllowAny]
@@ -46,13 +48,37 @@ class PostCreateView(views.APIView):
             images_data = data.get('images', [])
             for image_data in images_data:
                 Image.objects.create(post=post, **image_data)
+            
+            try:
+                sending_data = data
+                sending_data['id'] = post.id
+                if len(images_data) >0:
+                    sending_data['first_image'] = Image.objects.filter(post_id=post.id).first().image_url
+                else:
+                    sending_data['first_image'] ='https://ezgroup-static-files-bucket.s3.ap-southeast-2.amazonaws.com/media/ezgroup-logo.jpg'
+                print(sending_data)
+                fastapi_url = f"{os.getenv("NEWSLETTER_ENDPOINT")}/posts/"
+                response = requests.post(fastapi_url, json=sending_data)
 
-            return Response({
-                "EC": 1,
-                "EM": "Success",
-                "DT": serializer.data
-            }, status=status.HTTP_201_CREATED)
-        
+                if response.status_code == 200:
+                    return Response({
+                        "EC": 1,
+                        "EM": "Success",
+                        "DT": serializer.data
+                    }, status=status.HTTP_200_OK)
+                else:
+                    return Response({
+                        "EC": 1,
+                        "EM": f"Failed to add post to newsletter. Yet, saved post. Error: {response.text}",
+                        "DT": serializer.data
+                    }, status=status.HTTP_201_CREATED)
+
+            except requests.exceptions.RequestException as e:
+                return Response({
+                    "EC": 0,
+                    "EM": f"Error while sending post to FastAPI server: {e}"
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
