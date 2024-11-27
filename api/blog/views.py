@@ -210,7 +210,7 @@ class ImageListView(views.APIView):
 from rest_framework.parsers import MultiPartParser, FormParser
 
 class ImageCreateView(views.APIView):
-    permission_classes = [permissions.IsAuthenticated]  
+    permission_classes = [permissions.AllowAny]  
     parser_classes = [MultiPartParser, FormParser]  
 
     @swagger_auto_schema(
