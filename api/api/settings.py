@@ -221,7 +221,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOWED_ORIGINS = [
     "http://52.65.190.185:8080", # :8080 : SSO
     "http://localhost:5173", # :5173 : frontend
-    "http://13.239.214.68:8000", # Newsletter
+    "http://13.239.214.68:8004", # Newsletter
     "http://localhost:8004", # Newsletter local
 ]
 
