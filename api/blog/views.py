@@ -1,14 +1,16 @@
 from rest_framework import permissions, status, views
-from .models import Post, Image, Like, Notification, Comment
-from .serializers import PostSerializer, ImageSerializer, LikeSerializer, CommentSerializer, NotificationSerializer
+from .models import Post, Image, Like, Comment
+from .serializers import PostSerializer, ImageSerializer, LikeSerializer, CommentSerializer
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from drf_yasg import openapi
-from rest_framework.parsers import JSONParser
-
+import requests
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 class PostCreateView(views.APIView):
     permission_classes = [permissions.AllowAny]
@@ -46,13 +48,38 @@ class PostCreateView(views.APIView):
             images_data = data.get('images', [])
             for image_data in images_data:
                 Image.objects.create(post=post, **image_data)
+            
+            try:
+                sending_data = data
+                sending_data['created_at'] = post.created_at.isoformat()
+                sending_data['id'] = post.id
+                if len(images_data) >0:
+                    sending_data['first_image'] = Image.objects.filter(post_id=post.id).first().image_url
+                else:
+                    sending_data['first_image'] ='https://ezgroup-static-files-bucket.s3.ap-southeast-2.amazonaws.com/media/ezgroup-logo.jpg'
+                print(sending_data)
+                fastapi_url = f"{os.getenv("NEWSLETTER_ENDPOINT")}/posts/"
+                response = requests.post(fastapi_url, json=sending_data)
 
-            return Response({
-                "EC": 1,
-                "EM": "Success",
-                "DT": serializer.data
-            }, status=status.HTTP_201_CREATED)
-        
+                if response.status_code == 200:
+                    return Response({
+                        "EC": 1,
+                        "EM": "Success",
+                        "DT": serializer.data
+                    }, status=status.HTTP_200_OK)
+                else:
+                    return Response({
+                        "EC": 1,
+                        "EM": f"Failed to add post to newsletter. Yet, saved post. Error: {response.text}",
+                        "DT": serializer.data
+                    }, status=status.HTTP_201_CREATED)
+
+            except requests.exceptions.RequestException as e:
+                return Response({
+                    "EC": 0,
+                    "EM": f"Error while sending post to FastAPI server: {e}"
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -93,7 +120,7 @@ class PostDetails(views.APIView):
         }, status=status.HTTP_200_OK)
 
 class PostUpdateDeleteView(views.APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.AllowAny] 
 
     def get_object(self, post_id):
         return get_object_or_404(Post, pk=post_id)
@@ -116,7 +143,7 @@ class PostUpdateDeleteView(views.APIView):
             )
         ],
         responses={
-            200: PostSerializer,  
+            200: PostSerializer,
             400: "Invalid input",
             401: "Authentication failed",
             403: "Permission denied",
@@ -124,16 +151,16 @@ class PostUpdateDeleteView(views.APIView):
     )
     def put(self, request, post_id):
         post = self.get_object(post_id)
-        user_data = getattr(request, 'user_data', None)
+        user_data = getattr(request, 'user_data', None) 
         if not user_data:
             return Response({"error": "User not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
-        if post.user_id != user_data.get('id'):
-            return Response({"error": "Permission denied. You cannot modify another user's post."}, 
+        if post.user_id != user_data.get('id'): 
+            return Response({"error": "Permission denied. You cannot modify another user's post."},
                             status=status.HTTP_403_FORBIDDEN)
         self.check_object_permissions(request, post)
         serializer = PostSerializer(post, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save() 
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -149,19 +176,20 @@ class PostUpdateDeleteView(views.APIView):
             )
         ],
         responses={
-            204: "No Content",  
+            204: "No Content",
             401: "Authentication failed",
             403: "Permission denied",
         },
     )
-    def delete(self, request, pk):
-        post = self.get_object(pk)
-        user_data = getattr(request, 'user_data', None)
+    def delete(self, request, post_id):
+        post = self.get_object(post_id)
+        user_data = getattr(request, 'user_data', None) 
         if not user_data:
             return Response({"error": "User not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
-        if post.user_id != user_data.get('id'):
-            return Response({"error": "Permission denied. You cannot delete another user's post."}, 
+        if post.user_id != user_data.get('id'): 
+            return Response({"error": "Permission denied. You cannot delete another user's post."},
                             status=status.HTTP_403_FORBIDDEN)
+
         self.check_object_permissions(request, post)
         post.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -179,30 +207,25 @@ class ImageListView(views.APIView):
         images = post.images.all()
         serializer = ImageSerializer(images, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 from rest_framework.parsers import MultiPartParser, FormParser
+
 class ImageCreateView(views.APIView):
-    permission_classes = [permissions.AllowAny]
-    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [permissions.AllowAny]  
+    parser_classes = [MultiPartParser, FormParser]  
 
     @swagger_auto_schema(
         operation_summary="Create an image for a post",
-        request_body=ImageSerializer, 
-        manual_parameters=[  
+        manual_parameters=[
             openapi.Parameter(
                 'Authorization',
                 openapi.IN_HEADER,
                 description="Session token for the user accessing the image",
                 type=openapi.TYPE_STRING,
                 required=True,
-            ),
-            openapi.Parameter(
-                'file',  
-                openapi.IN_FORM, 
-                description="Image file to be uploaded",
-                type=openapi.TYPE_FILE,
-                required=True
             )
         ],
+        request_body=ImageSerializer,
         responses={
             201: "Image uploaded successfully",
             400: "Invalid input",
@@ -212,43 +235,35 @@ class ImageCreateView(views.APIView):
     )
     def post(self, request, post_id, *args, **kwargs):
         try:
-            post = Post.objects.get(pk=post_id)
+            try:
+                post = Post.objects.get(pk=post_id)
+            except Post.DoesNotExist:
+                return Response(
+                    {"EC": -1, "EM": "Post not found", "DT": ""},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            request_data = request.data.copy()
+            request_data["post"] = post.id
+
+            serializer = ImageSerializer(data=request_data)
+            if not serializer.is_valid():
+                return Response(
+                    {"EC": -1, "EM": "Invalid input", "DT": serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             
-            image_url = request.data.get('image_url')
-            label = request.data.get('label', '')
-
-            if not image_url:
-                return Response({
-                    "EC": -1,
-                    "EM": "No image URL provided",
-                    "DT": ""
-                }, status=status.HTTP_400_BAD_REQUEST)
-
-            image = Image.objects.create(
-                post=post,
-                image_url=image_url,
-                label=label
+            image = serializer.save()
+            return Response(
+                {"EC": 1, "EM": "Image saved successfully", "DT": serializer.data},
+                status=status.HTTP_201_CREATED,
             )
 
-            serializer = ImageSerializer(image)
-            return Response({
-                "EC": 1,
-                "EM": "Image saved successfully",
-                "DT": serializer.data
-            }, status=status.HTTP_201_CREATED)
-
-        except Post.DoesNotExist:
-            return Response({
-                "EC": -1,
-                "EM": "Post not found",
-                "DT": ""
-            }, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({
-                "EC": -1,
-                "EM": f"Error saving image: {str(e)}",
-                "DT": ""
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"EC": -1, "EM": f"Error saving image: {str(e)}", "DT": ""},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 class CommentListView(views.APIView):
     permission_classes = [permissions.AllowAny]
@@ -290,48 +305,37 @@ class CommentCreateView(views.APIView):
         },
     )
     def post(self, request, post_id):
-        try:
-            post = Post.objects.get(id=post_id)
-        except Post.DoesNotExist:
-            return Response({'error': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
+        post = get_object_or_404(Post, pk=post_id)
 
+        # Initialize user data
         user_data = getattr(request, 'user_data', None)
-        data = request.data
+        data = request.data.copy()  # Copy data to avoid mutating request.data
+
+        # Set user information if authenticated
         if user_data:
             data['user_id'] = user_data.get('id')
             data['user_name'] = user_data.get('full_name')
             data['user_email'] = user_data.get('email')
+        else:
+            # return Response({"error": "Permission denied. You cannot delete another user's post."},
+            #                 status=status.HTTP_403_FORBIDDEN)
+            data['user_id'] = 'anonymous'
+            data['user_name'] = 'Anonymous'
+            data['user_email'] = 'anonymous@gmail.com'
+
+        parent_id = data.get('parent')
+        if parent_id is not None and parent_id != '':
+            if not Comment.objects.filter(id=parent_id).exists():
+                return Response({'error': f"Parent comment with ID {parent_id} does not exist."}, 
+                                status=status.HTTP_400_BAD_REQUEST)
 
         serializer = CommentSerializer(data=data)
-        if serializer.is_valid():
-            comment = serializer.save(post=post)  
 
-            self.create_notification(
-                recipient_id=post.user_id,  
-                recipient_name=post.user_name,
-                recipient_email=post.user_email,
-                message=f"Your post '{post.title}' has a new comment by {data['user_name']}: '{comment.content}'"
-            )  
+        if serializer.is_valid():
+            comment = serializer.save(post=post)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    def create_notification(self, recipient_id, recipient_name, recipient_email, message):
-        Notification.objects.create(
-            user_id=recipient_id,
-            user_name=recipient_name,
-            user_email=recipient_email,
-            message=message,
-        )
-        
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f"user_{recipient_id}", 
-            {
-                "type": "send_notification",
-                "message": message,
-            }
-        )
     
 class CommentUpdateDeleteView(views.APIView):
     permission_classes = [permissions.AllowAny]
@@ -415,16 +419,16 @@ class LikeCreateDeleteView(views.APIView):
     @swagger_auto_schema(
         operation_summary="Like a post",
         request_body=LikeSerializer,
-        manual_parameters=[ 
+        manual_parameters=[
             openapi.Parameter(
                 'Authorization',
                 openapi.IN_HEADER,
                 description="Session token for the user liking the post",
                 type=openapi.TYPE_STRING,
-                required=True,
+                required=False, 
             )
         ],
-        responses={  
+        responses={
             201: "Liked post",
             400: "Invalid input (already liked)",
             401: "Authentication failed",
@@ -435,41 +439,45 @@ class LikeCreateDeleteView(views.APIView):
         post = Post.objects.filter(pk=post_id).first()
         if not post:
             return Response({"detail": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
+
         user_data = getattr(request, 'user_data', None)
-        if not user_data:
-            return Response({"error": "Authentication failed"}, status=status.HTTP_401_UNAUTHORIZED)
-        if Like.objects.filter(user_id=user_data.get('id'), post=post).exists():
+        
+        if user_data:
+            user_id = user_data.get('id')
+            user_name = user_data.get('full_name')
+            user_email = user_data.get('email')
+        else:
+            user_id = 'anonymous'  
+            user_name = 'Anonymous'
+            user_email = 'anonymous@gmail.com'
+
+        if Like.objects.filter(user_id=user_id, post=post).exists() and user_id != 'anonymous':
             return Response({"detail": "You have already liked this post."}, status=status.HTTP_400_BAD_REQUEST)
-        data = request.data
-        data['user_id'] = user_data.get('id')
-        data['user_name'] = user_data.get('full_name')
-        data['user_email'] = user_data.get('email')
 
-        serializer = LikeSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save(post=post)
-            self.create_notification(
-                recipient_id=post.user_id,  
-                recipient_name=post.user_name,
-                recipient_email=post.user_email,
-                message=f"Your post '{post.title}' was liked by {data['user_name']}."
-            )
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        like_instance = Like(
+            user_id=user_id,
+            user_name=user_name,
+            user_email=user_email,
+            post=post
+        )
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        like_instance.save()
+
+        serializer = LikeSerializer(like_instance)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @swagger_auto_schema(
         operation_summary="Unlike a post",
-        manual_parameters=[ 
+        manual_parameters=[
             openapi.Parameter(
                 'Authorization',
                 openapi.IN_HEADER,
                 description="Session token for the user unliking the post",
                 type=openapi.TYPE_STRING,
-                required=True,
+                required=False, 
             )
         ],
-        responses={ 
+        responses={
             204: "No Content",
             400: "You haven't liked this post",
             401: "Authentication failed",
@@ -480,116 +488,16 @@ class LikeCreateDeleteView(views.APIView):
         post = Post.objects.filter(pk=post_id).first()
         if not post:
             return Response({"detail": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
-        user_data = getattr(request, 'user_data', None)
-        if not user_data:
-            return Response({"error": "Authentication failed"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        like = Like.objects.filter(user_id=user_data.get('id'), post=post).first()
-        if not like:
-            return Response({"detail": "You haven't liked this post."}, status=status.HTTP_400_BAD_REQUEST)
+        user_data = getattr(request, 'user_data', None)
+        if user_data:
+            user_id = user_data.get('id')
+        else:
+            return Response({"error": "Authentication failed"}, status=status.HTTP_401_UNAUTHORIZED)
+        if user_id != 'anonymous':
+            like = Like.objects.filter(user_id=user_id, post=post).first()
+            if not like:
+                return Response({"detail": "You haven't liked this post."}, status=status.HTTP_400_BAD_REQUEST)
 
         like.delete()
-        return Response({"detail": "Like removed successfully"}, status=status.HTTP_204_NO_CONTENT)
-
-    def create_notification(self, recipient_id, recipient_name, recipient_email, message):
-        Notification.objects.create(
-            user_id=recipient_id,
-            user_name=recipient_name,
-            user_email=recipient_email,
-            message=message,
-        )
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f"user_{recipient_id}", 
-            {
-                "type": "send_notification",
-                "message": message,
-            }
-        )
-
-class NotificationListView(views.APIView):
-    permission_classes = [permissions.AllowAny]
-
-    @swagger_auto_schema(
-        operation_summary="Get Notifications for a User",
-        responses={200: NotificationSerializer(many=True)},
-    )
-    def get(self, request):
-        user_id = getattr(request, 'user_data', {}).get('id') 
-        if not user_id:
-            return Response({"error": "User not authenticated"}, status=status.HTTP_400_BAD_REQUEST)
-        notifications = Notification.objects.filter(user_id=user_id).order_by('-created_at')
-        serializer = NotificationSerializer(notifications, many=True)
-        return Response(serializer.data)
-
-
-class MarkNotificationAsReadView(views.APIView):
-    permission_classes = [permissions.AllowAny]
-
-    @swagger_auto_schema(
-        operation_summary="Mark a notification as read",
-        manual_parameters=[  
-            openapi.Parameter(
-                'Authorization',
-                openapi.IN_HEADER,
-                description="Session token for the user accessing the notifications",
-                type=openapi.TYPE_STRING,
-                required=True,
-            )
-        ],
-        responses={
-            200: "Notification marked as read successfully",
-            400: "Invalid input",
-            401: "Authentication failed",
-            403: "Permission denied",
-            404: "Notification not found",
-        },
-    )
-    def post(self, request, notification_id):
-        user_data = getattr(request, 'user_data', None)
-        if not user_data:
-            return Response({"error": "User not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
-
-        try:
-            notification = Notification.objects.get(id=notification_id, user_id=user_data.get('id'))
-            notification.is_read = True 
-            notification.save()
-            return Response({'status': 'Notification marked as read'}, status=status.HTTP_200_OK)
-        
-        except Notification.DoesNotExist:
-            return Response({'error': 'Notification not found or you do not have permission to mark it'}, status=status.HTTP_404_NOT_FOUND)
-
-    
-class NotificationDeleteView(views.APIView):
-    permission_classes = [permissions.AllowAny]
-
-    @swagger_auto_schema(
-        operation_summary="Delete a notification",
-        manual_parameters=[
-            openapi.Parameter(
-                'Authorization',
-                openapi.IN_HEADER,
-                description="Session token for the user accessing the notification",
-                type=openapi.TYPE_STRING,
-                required=True,
-            )
-        ],
-        responses={
-            204: "No Content",
-            400: "Notification not found or invalid request",
-            401: "Authentication failed",
-            403: "Permission denied",
-        },
-    )
-    def delete(self, request, pk):
-        user_data = getattr(request, 'user_data', None)
-        if not user_data:
-            return Response({"error": "User not authenticated or user_data missing"}, status=status.HTTP_401_UNAUTHORIZED)
-        try:
-            notification = Notification.objects.get(id=pk, user_id=user_data.get('id'))
-            notification.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except Notification.DoesNotExist:
-            return Response({'error': 'Notification not found or you do not have permission to delete it'}, status=status.HTTP_404_NOT_FOUND)
-
-
+        return Response({"detail": "Unlike successfully"}, status=status.HTTP_204_NO_CONTENT)

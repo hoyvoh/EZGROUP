@@ -4,4 +4,6 @@
 **/package-lock.json
 **/package.json
 **/.ipynb_checkpoints
+**/pems
 **/Ezgroup-key-pair.pem
+**/data_collection
