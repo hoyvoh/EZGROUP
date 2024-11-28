@@ -13,7 +13,7 @@ class Post(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'Post: {self.title} | by {self.author_name or "Anonymous"}'
+        return f'Post: {self.title} | by {self.user_name or "Anonymous"}'
     class Meta:
         managed = True
     
@@ -46,7 +46,6 @@ class Image(models.Model):
     class Meta:
         managed = True
 
-# Managed by consumers
 class Comment(models.Model):
     post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name="comments", null=False)
     content = models.TextField(null=False)
@@ -75,17 +74,4 @@ class Like(models.Model):
 
     def __str__(self):
         return f"{self.user_name} likes {self.post.title}"
-
-class Notification(models.Model):
-    user_id = models.CharField(max_length=255,null=False, default="default")
-    user_name = models.CharField(max_length=255,null=False, default="default")
-    user_email = models.EmailField(max_length=255, null=False, default="default@email.com")
-    message = models.CharField(max_length=255)
-    is_read = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Notification for {self.user_name}: {self.message}"
-    class Meta:
-        managed = True
     
