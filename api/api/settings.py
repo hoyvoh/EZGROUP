@@ -226,6 +226,10 @@ CORS_ALLOWED_ORIGINS = [
     # "http://172.31.0.24:8000", # BE private
     # "http://172.31.1.145:8080", # SSO private
     # "http://172.31.12.153:8000", # Newsletter private
+    "https://sso.ezgroups.com.vn",
+    "https://newsletter.ezgroups.com.vn",
+    "https://ezgroups.com.vn",
+    "https://ezlife-real-estate-frontend.vercel.app", # Front end
 ]
 
 CORS_ALLOW_CREDENTIALS = True
