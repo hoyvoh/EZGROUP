@@ -222,10 +222,10 @@ CORS_ALLOWED_ORIGINS = [
     "http://52.65.190.185:8080", # :8080 : SSO public
     "http://localhost:5173", # :5173 : frontend public
     "http://13.239.214.68:8000", # Newsletter public
-    "http://localhost:8004", # Newsletter local
-    # "http://172.31.0.24:8000", # BE private
-    # "http://172.31.1.145:8080", # SSO private
-    # "http://172.31.12.153:8000", # Newsletter private
+    # "http://localhost:8004", # Newsletter local
+    "http://172.31.0.24:8000", # BE private
+    "http://172.31.1.145:8080", # SSO private
+    "http://172.31.12.153:8000", # Newsletter private
     "https://sso.ezgroups.com.vn",
     "https://newsletter.ezgroups.com.vn",
     "https://ezgroups.com.vn",
