@@ -230,6 +230,10 @@ CORS_ALLOWED_ORIGINS = [
     "https://newsletter.ezgroups.com.vn",
     "https://ezgroups.com.vn",
     "https://ezlife-real-estate-frontend.vercel.app", # Front end
+    "http://sso.ezgroups.com.vn",
+    "http://newsletter.ezgroups.com.vn",
+    "http://ezgroups.com.vn",
+    "http://ezlife-real-estate-frontend.vercel.app", # Front end
 ]
 
 CORS_ALLOW_CREDENTIALS = True
