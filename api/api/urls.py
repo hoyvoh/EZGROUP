@@ -3,6 +3,7 @@ from django.urls import path, include
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework.permissions import AllowAny
+from django.views.generic.base import RedirectView
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -17,12 +18,13 @@ schema_view = get_schema_view(
     ),
     public=True,
     permission_classes=[AllowAny],
-    url="https://blog.ezgroups.com.vn", 
+    url="https://blog.ezgroups.com.vn",
 )
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/v1/authen/', include('authen.urls')),
+    # path('admin/', admin.site.urls),
+    # path('api/v1/authen/', include('authen.urls')),
+    path('', RedirectView.as_view(url='/api/docs/', permanent=False), name='redirect-to-docs'),
     path('api/v1/blogs/', include('blog.urls')),
     path('api/docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 ]

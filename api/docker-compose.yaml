@@ -17,14 +17,6 @@ services:
     ports:
       - "3306:3306"
 
-  redis:
-    image: redis:latest
-    container_name: redis_container
-    networks:
-      - backend_network
-    ports:
-      - "6379:6379"
-
   api:
     build:
       context: .
@@ -35,7 +27,6 @@ services:
       - .env
     depends_on:
       - mysql
-      - redis
     networks:
       - backend_network
     ports:
