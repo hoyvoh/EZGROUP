@@ -641,7 +641,7 @@ class LikeDeleteView(views.APIView):
         return Response({"detail": "Unlike successfully"}, status=status.HTTP_204_NO_CONTENT)
 
 class LikeListView(views.APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     @swagger_auto_schema(
         operation_summary="List all likes for a post",
@@ -651,7 +651,7 @@ class LikeListView(views.APIView):
                 openapi.IN_HEADER,
                 description="Session token for the user",
                 type=openapi.TYPE_STRING,
-                required=True,
+                required=False,
             )
         ],
         responses={
