@@ -17,6 +17,12 @@ NON_SECURE_PATHS = [
     r"/api/v1/blog/posts/\d+/images/$",  
     r"/api/docs/",
     r"/"
+    r"/api/v1/blogs/posts", 
+    r"/api/v1/blogs/posts/\d+",
+    r"/api/v1/blogs/posts/\d+/likes",  
+    r"/api/v1/blogs/posts/\d+/comments",  
+    r"/api/v1/blogs/posts/\d+/images",
+    r"/api/docs"  
 ]
 
 
@@ -34,6 +40,7 @@ class JWTAuthenticationMiddleware:
             print(f"Skipping auth for path: {path}")
             return self.get_response(request)
         for pattern in NON_SECURE_PATHS:
+            print(f"Checking pattern {pattern} against path {path}")
             if re.match(pattern, path):
                 print(f"Path {path} matches pattern {pattern}, skipping auth")
                 return self.get_response(request)
