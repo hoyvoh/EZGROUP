@@ -278,6 +278,128 @@ class ImageCreateView(views.APIView):
                 {"EC": -1, "EM": f"Error saving image: {str(e)}", "DT": ""},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+        
+class ImageUpdateView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+    parser_classes = [MultiPartParser, FormParser]
+
+    @swagger_auto_schema(
+        operation_summary="Update an image for a post",
+        manual_parameters=[
+            openapi.Parameter(
+                'Authorization',
+                openapi.IN_HEADER,
+                description="Session token for the user accessing the image",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
+        request_body=ImageSerializer,
+        responses={
+            200: "Image updated successfully",
+            400: "Invalid input",
+            401: "Authentication failed",
+            403: "Permission denied",
+        },
+    )
+    def put(self, request, post_id, image_id, *args, **kwargs):
+        try:
+            try:
+                post = Post.objects.get(pk=post_id)
+            except Post.DoesNotExist:
+                return Response(
+                    {"EC": -1, "EM": "Post not found", "DT": ""},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            try:
+                image = Image.objects.get(pk=image_id, post=post)
+            except Image.DoesNotExist:
+                return Response(
+                    {"EC": -1, "EM": "Image not found for this post", "DT": ""},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            if post.user != request.user:
+                return Response(
+                    {"EC": -1, "EM": "Permission denied", "DT": ""},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            serializer = ImageSerializer(image, data=request.data, partial=True)
+            if not serializer.is_valid():
+                return Response(
+                    {"EC": -1, "EM": "Invalid input", "DT": serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            serializer.save()
+            return Response(
+                {"EC": 1, "EM": "Image updated successfully", "DT": serializer.data},
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response(
+                {"EC": -1, "EM": f"Error updating image: {str(e)}", "DT": ""},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class ImageDeleteView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
+    @swagger_auto_schema(
+        operation_summary="Delete an image for a post",
+        manual_parameters=[
+            openapi.Parameter(
+                'Authorization',
+                openapi.IN_HEADER,
+                description="Session token for the user accessing the image",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
+        responses={
+            200: "Image deleted successfully",
+            404: "Image not found",
+            401: "Authentication failed",
+            403: "Permission denied",
+        },
+    )
+    def delete(self, request, post_id, image_id, *args, **kwargs):
+        try:
+            try:
+                post = Post.objects.get(pk=post_id)
+            except Post.DoesNotExist:
+                return Response(
+                    {"EC": -1, "EM": "Post not found", "DT": ""},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            try:
+                image = Image.objects.get(pk=image_id, post=post)
+            except Image.DoesNotExist:
+                return Response(
+                    {"EC": -1, "EM": "Image not found for this post", "DT": ""},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            if post.user != request.user:
+                return Response(
+                    {"EC": -1, "EM": "Permission denied", "DT": ""},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            image.delete()
+            return Response(
+                {"EC": 1, "EM": "Image deleted successfully", "DT": ""},
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response(
+                {"EC": -1, "EM": f"Error deleting image: {str(e)}", "DT": ""},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 class CommentListView(views.APIView):
     permission_classes = [permissions.AllowAny]
