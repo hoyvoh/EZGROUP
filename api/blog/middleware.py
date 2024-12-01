@@ -16,7 +16,7 @@ NON_SECURE_PATHS = [
     # r"/api/v1/blogs/posts/create-post/", 
     # r"/api/v1/blogs/posts/\d+/images/upload/",
     r"/api/v1/blog/posts/\d+/like/",     
-    r"/api/v1/blog/posts/\d+/images/",   
+    r"/api/v1/blogs/posts/\d+/images/",   
     r"/api/v1/blog/posts/\d+/comments/", 
     r"/api/v1/blog/notifications/",
     r"/api/v1/subscribe/",
