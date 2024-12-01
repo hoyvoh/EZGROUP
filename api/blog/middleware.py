@@ -80,12 +80,14 @@ class JWTAuthenticationMiddleware:
                     print(f"Attached user data: {request.user_data}")
                     
                     current_path = path.replace('/api/v1', '')
-                    if current_path in request.user_data['permissions']:
-                        print(f"User has permission for path: {current_path}")
+                    normalized_path = re.sub(r'/\d+/', '/', current_path)
+                    
+                    if normalized_path in request.user_data['permissions']:
+                        print(f"User has permission for path: {normalized_path}")
                         request.auth_token = token
                         return self.get_response(request)
                     else:
-                        print(f"User lacks permission for path: {current_path}")
+                        print(f"User lacks permission for path: {normalized_path}")
                         return JsonResponse({
                             "EC": -1,
                             "EM": "Permission denied",
