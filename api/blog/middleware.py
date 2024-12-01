@@ -34,12 +34,12 @@ class JWTAuthenticationMiddleware:
         for pattern in NON_SECURE_PATHS:
             if re.match(pattern, path):
                 print(f"Path {path} matches pattern {pattern}, skipping auth")
-            return self.get_response(request)
+                return self.get_response(request)
     
         print(f"Path {path} requires authentication")
             
         token = self.extract_token(request)
-        print(token)
+        print("Token in JWT authen:", token)
         if not token:
             return JsonResponse({
                 "EC": -1,
