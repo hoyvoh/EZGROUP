@@ -455,7 +455,7 @@ class CommentCreateView(views.APIView):
                 return Response({'error': f"Parent comment with ID {parent_id} does not exist."}, 
                                 status=status.HTTP_400_BAD_REQUEST)
 
-        print(data)
+        print('check data comment create:', data)
         serializer = CommentSerializer(data=data)
 
         if serializer.is_valid():
