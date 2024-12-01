@@ -622,20 +622,30 @@ class LikeDeleteView(views.APIView):
             403: "Permission denied",
         },
     )
-    def delete(self, request, post_id):
+    def delete(self, request, post_id, like_id):
+        # First check if post exists
         post = Post.objects.filter(pk=post_id).first()
         if not post:
             return Response({"detail": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        # Get user data from request
         user_data = getattr(request, 'user_data', None)
-        if user_data:
-            user_id = user_data.get('id')
-        else:
+        if not user_data:
             return Response({"error": "Authentication failed"}, status=status.HTTP_401_UNAUTHORIZED)
-        if user_id != 'anonymous':
-            like = Like.objects.filter(user_id=user_id, post=post).first()
-            if not like:
-                return Response({"detail": "You haven't liked this post."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user_id = user_data.get('id')
+        
+        like = Like.objects.filter(
+            id=like_id,
+            post=post,
+            user_id=user_id
+        ).first()
+
+        if not like:
+            return Response(
+                {"detail": "Like not found or you don't have permission to delete it."}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
 
         like.delete()
         return Response({"detail": "Unlike successfully"}, status=status.HTTP_204_NO_CONTENT)
