@@ -44,6 +44,7 @@ class JWTAuthenticationMiddleware:
         print(f"Path {path} requires authentication")
             
         token = self.extract_token(request)
+        print(token)
         if not token:
             return JsonResponse({
                 "EC": -1,
@@ -127,6 +128,7 @@ class JWTAuthenticationMiddleware:
 
     def extract_token(self, request):
         auth_header = request.headers.get("Authorization")
+        print("Authorization at extract token:", auth_header)
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header.split(" ")[1]
             print(f"Extracted token: {token[:30]}...")

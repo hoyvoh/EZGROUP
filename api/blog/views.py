@@ -119,7 +119,7 @@ class PostDetails(views.APIView):
             "DT": serializer.data
         }, status=status.HTTP_200_OK)
 
-class PostUpdateDeleteView(views.APIView):
+class PostUpdateView(views.APIView):
     permission_classes = [permissions.AllowAny] 
 
     def get_object(self, post_id):
@@ -152,6 +152,7 @@ class PostUpdateDeleteView(views.APIView):
     def put(self, request, post_id):
         post = self.get_object(post_id)
         user_data = getattr(request, 'user_data', None) 
+        print(user_data)
         if not user_data:
             return Response({"error": "User not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
         if post.user_id != user_data.get('id'): 
@@ -164,6 +165,19 @@ class PostUpdateDeleteView(views.APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    
+    
+class PostDeleteView(views.APIView):
+    permission_classes = [permissions.AllowAny] 
+
+    def get_object(self, post_id):
+        return get_object_or_404(Post, pk=post_id)
+
+    def get(self, request, post_id):
+        post = self.get_object(post_id)
+        serializer = PostSerializer(post)
+        return Response(serializer.data)
+    
     @swagger_auto_schema(
         operation_summary="Delete a post",
         manual_parameters=[
@@ -193,7 +207,7 @@ class PostUpdateDeleteView(views.APIView):
         self.check_object_permissions(request, post)
         post.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
 
 class ImageListView(views.APIView):
     permission_classes = [permissions.AllowAny]
