@@ -60,13 +60,13 @@ class CommentSerializer(serializers.ModelSerializer):
             'id', 'content', 'created_at', 'user_id', 'user_name', 
             'user_email', 'parent', 'commenter_name', 'replies_count',
         ]
-        read_only_fields = ['created_at', 'user_id', 'user_name', 'user_email']
+        read_only_fields = ['created_at']
 
 class LikeSerializer(serializers.ModelSerializer):
     created_at = serializers.DateTimeField(read_only=True)
     class Meta:
         model = Like
-        fields = ['user_id', 'user_name', 'user_email', 'created_at']
+        fields = ['id','user_id', 'user_name', 'user_email', 'created_at']
         read_only_fields = ['created_at']
  
 
