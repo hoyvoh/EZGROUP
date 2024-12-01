@@ -8,12 +8,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 NON_SECURE_PATHS = [
-    r"/api/v1/blogs/posts", 
-    r"/api/v1/blogs/posts/\d+",
-    r"/api/v1/blogs/posts/\d+/likes",  
-    r"/api/v1/blogs/posts/\d+/comments",  
-    r"/api/v1/blogs/posts/\d+/images",
-    r"/api/docs"  
+    r"^/api/v1/blogs/posts$", 
+    r"^/api/v1/blogs/posts/\d+$",
+    r"^/api/v1/blogs/posts/\d+/likes$",  
+    r"^/api/v1/blogs/posts/\d+/comments$",  
+    r"^/api/v1/blogs/posts/\d+/images$",
+    r"^/api/docs$"  
 ]
 
 
