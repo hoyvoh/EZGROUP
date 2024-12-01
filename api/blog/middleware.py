@@ -11,10 +11,11 @@ NON_SECURE_PATHS = [
     r"/api/v1/auth/logout",
     r"/api/v1/auth/register",
     r"/api/v1/auth/login",
-    r"/api/v1/blog/posts/$", 
-    r"/api/v1/blog/posts/\d+/$",  
-    r"/api/v1/blog/posts/\d+/comments/$",  
-    r"/api/v1/blog/posts/\d+/images/$",  
+    r"/api/v1/blogs/posts/$", 
+    r"/api/v1/blogs/posts/\d+/details/$",  
+    r"/api/v1/blogs/posts/\d+/comments/$",  
+    r"/api/v1/blogs/posts/\d+/images/$",
+    r"/api/docs"  
 ]
 
 
