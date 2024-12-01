@@ -443,11 +443,11 @@ class CommentCreateView(views.APIView):
             data['user_name'] = user_data.get('full_name')
             data['user_email'] = user_data.get('email')
         else:
-            # return Response({"error": "Permission denied. You cannot delete another user's post."},
-            #                 status=status.HTTP_403_FORBIDDEN)
-            data['user_id'] = 'anonymous'
-            data['user_name'] = 'Anonymous'
-            data['user_email'] = 'anonymous@gmail.com'
+            return Response({"error": "Permission denied. You cannot delete another user's post."},
+                             status=status.HTTP_403_FORBIDDEN)
+            # data['user_id'] = 'anonymous'
+            # data['user_name'] = 'Anonymous'
+            # data['user_email'] = 'anonymous@gmail.com'
 
         parent_id = data.get('parent')
         if parent_id is not None and parent_id != '':
@@ -455,6 +455,7 @@ class CommentCreateView(views.APIView):
                 return Response({'error': f"Parent comment with ID {parent_id} does not exist."}, 
                                 status=status.HTTP_400_BAD_REQUEST)
 
+        print(data)
         serializer = CommentSerializer(data=data)
 
         if serializer.is_valid():
@@ -583,9 +584,8 @@ class LikeCreateView(views.APIView):
             user_name = user_data.get('full_name')
             user_email = user_data.get('email')
         else:
-            user_id = 'anonymous'  
-            user_name = 'Anonymous'
-            user_email = 'anonymous@gmail.com'
+            return Response({"error": "Permission denied. You cannot delete another user's post."},
+                             status=status.HTTP_403_FORBIDDEN)
 
         if Like.objects.filter(user_id=user_id, post=post).exists() and user_id != 'anonymous':
             return Response({"detail": "You have already liked this post."}, status=status.HTTP_400_BAD_REQUEST)

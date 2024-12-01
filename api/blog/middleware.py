@@ -15,6 +15,8 @@ NON_SECURE_PATHS = [
     r"/api/v1/blog/posts/\d+/$",  
     r"/api/v1/blog/posts/\d+/comments/$",  
     r"/api/v1/blog/posts/\d+/images/$",  
+    r"/api/docs/",
+    r"/"
 ]
 
 
