@@ -125,11 +125,6 @@ class PostUpdateView(views.APIView):
     def get_object(self, post_id):
         return get_object_or_404(Post, pk=post_id)
 
-    def get(self, request, post_id):
-        post = self.get_object(post_id)
-        serializer = PostSerializer(post)
-        return Response(serializer.data)
-
     @swagger_auto_schema(
         operation_summary="Modify a post",
         request_body=PostSerializer,
@@ -172,11 +167,6 @@ class PostDeleteView(views.APIView):
 
     def get_object(self, post_id):
         return get_object_or_404(Post, pk=post_id)
-
-    def get(self, request, post_id):
-        post = self.get_object(post_id)
-        serializer = PostSerializer(post)
-        return Response(serializer.data)
     
     @swagger_auto_schema(
         operation_summary="Delete a post",
@@ -473,7 +463,7 @@ class CommentCreateView(views.APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-class CommentUpdateDeleteView(views.APIView):
+class CommentUpdateView(views.APIView):
     permission_classes = [permissions.AllowAny]
 
     def get_object(self, post_id, comment_id):
@@ -519,6 +509,16 @@ class CommentUpdateDeleteView(views.APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class CommentDeleteView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get_object(self, post_id, comment_id):
+        try:
+            post = Post.objects.get(id=post_id)
+            comment = Comment.objects.get(id=comment_id, post=post)
+            return comment
+        except (Post.DoesNotExist, Comment.DoesNotExist):
+            return None
     @swagger_auto_schema(
         operation_summary="Delete a comment",
         manual_parameters=[ 
@@ -549,7 +549,7 @@ class CommentUpdateDeleteView(views.APIView):
         comment.delete()
         return Response({'status': 'Comment deleted'}, status=status.HTTP_204_NO_CONTENT)
 
-class LikeCreateDeleteView(views.APIView):
+class LikeCreateView(views.APIView):
     permission_classes = [permissions.AllowAny]
 
     @swagger_auto_schema(
@@ -602,6 +602,8 @@ class LikeCreateDeleteView(views.APIView):
         serializer = LikeSerializer(like_instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+class LikeDeleteView(views.APIView):
+    permission_classes = [permissions.AllowAny]
     @swagger_auto_schema(
         operation_summary="Unlike a post",
         manual_parameters=[
@@ -637,3 +639,31 @@ class LikeCreateDeleteView(views.APIView):
 
         like.delete()
         return Response({"detail": "Unlike successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+class LikeListView(views.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="List all likes for a post",
+        manual_parameters=[
+            openapi.Parameter(
+                'Authorization',
+                openapi.IN_HEADER,
+                description="Session token for the user",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
+        responses={
+            200: "List of likes",
+            404: "Post not found",
+        },
+    )
+    def get(self, request, post_id):
+        post = Post.objects.filter(pk=post_id).first()
+        if not post:
+            return Response({"detail": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        likes = Like.objects.filter(post=post)
+        serializer = LikeSerializer(likes, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
