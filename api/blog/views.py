@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from channels.layers import get_channel_layer
+from django.utils.html import format_html
 from asgiref.sync import async_to_sync
 from drf_yasg import openapi
 import requests
@@ -113,10 +114,13 @@ class PostDetails(views.APIView):
         post = self.get_object(post_id)
 
         serializer = PostSerializer(post)
+        data = serializer.data
+        data["content_html"] = format_html(post.content)
+
         return Response({
             "EC": 1,
             "EM": "Success",
-            "DT": serializer.data
+            "DT": data
         }, status=status.HTTP_200_OK)
 
 class PostUpdateView(views.APIView):
