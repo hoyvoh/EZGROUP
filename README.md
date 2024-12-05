@@ -5,8 +5,8 @@ This API includes methods of running on a blog website.
 
 This is a part of a bigger web project containing:
 
-- Frontend: [FrontEnd](https://github.com/Thupha41/EZLIFE-Real-Estate-Frontend) by Ngo Thuan Phat (@thupha51)
-- SSO service: [SSO service](https://github.com/Thupha41/EZLIFE-Real-Estate-SSO-Backend) by Ngo Thuan Phat (@thupha51)
+- Frontend: [FrontEnd](https://github.com/Thupha41/EZLIFE-Real-Estate-Frontend) by Ngo Thuan Phat (@thupha41)
+- SSO service: [SSO service](https://github.com/Thupha41/EZLIFE-Real-Estate-SSO-Backend) by Ngo Thuan Phat (@thupha41)
 - Newsletter service: [Newsletter](https://github.com/hoyvoh/EZNewsletter-worker) by Ho Vy (@hoyvoh)
 - API service: [API](https://github.com/hoyvoh/EZGROUP/tree/FR9/Detach-Subscibe-app) by Ho Vy (@hoyvoh)
 
