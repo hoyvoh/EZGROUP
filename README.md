@@ -1,5 +1,6 @@
 # EZGROUP API
 
+See API document at: [newsletters](https://blog.ezgroups.com.vn)
 This API includes methods of running on a blog website.
 
 This is a part of a bigger web project containing:
