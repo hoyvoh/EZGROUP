@@ -1,6 +1,6 @@
 # EZGROUP API
 
-See API document at: [blog](https://blog.ezgroups.com.vn)
+See API document at: [blog](https://blog.ezgroups.com.vn/api/docs/)
 See detailed development and deployment structure here: [presentation](https://www.canva.com/design/DAGXK_QCTkU/yNCPFA02dd0RLyQqiL2Jgw/edit?utm_content=DAGXK_QCTkU&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
 This API includes methods of running on a blog website.
